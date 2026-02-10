@@ -1,0 +1,9 @@
+../Algorithm+Sensors/MS5837/ms5837.c:16:16:MS5837_CheckCRC	48	static
+../Algorithm+Sensors/MS5837/ms5837.c:54:6:MS5837_ReadPROM	32	static
+../Algorithm+Sensors/MS5837/ms5837.c:69:6:MS5837_StartConversion	32	static
+../Algorithm+Sensors/MS5837/ms5837.c:78:19:MS5837_Init	32	static
+../Algorithm+Sensors/MS5837/ms5837.c:110:6:MS5837_Send_Command_DMA	16	static
+../Algorithm+Sensors/MS5837/ms5837.c:120:6:MS5837_Reset	32	static
+../Algorithm+Sensors/MS5837/ms5837.c:130:6:MS5837_Read_ADC_DMA	16	static
+../Algorithm+Sensors/MS5837/ms5837.c:139:10:MS5837_Parse_ADC	16	static
+../Algorithm+Sensors/MS5837/ms5837.c:148:6:MS5837_Calculate	104	static

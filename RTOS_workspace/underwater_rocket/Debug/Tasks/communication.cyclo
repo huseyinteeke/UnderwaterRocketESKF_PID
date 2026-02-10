@@ -1,0 +1,2 @@
+../Tasks/communication.c:18:9:Comm_Get_Parsed_Command	13
+../Tasks/communication.c:69:6:Comm_Send_Response	1
