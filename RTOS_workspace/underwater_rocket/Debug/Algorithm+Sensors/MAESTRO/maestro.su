@@ -1,5 +1,0 @@
-../Algorithm+Sensors/MAESTRO/maestro.c:20:10:degreetoUs	24	static
-../Algorithm+Sensors/MAESTRO/maestro.c:54:6:MaestroInit	24	static
-../Algorithm+Sensors/MAESTRO/maestro.c:73:6:Maestro_SetTarget	24	static
-../Algorithm+Sensors/MAESTRO/maestro.c:111:6:Maestro_SetSpeed	24	static
-../Algorithm+Sensors/MAESTRO/maestro.c:147:6:Maestro_SetAccel	24	static

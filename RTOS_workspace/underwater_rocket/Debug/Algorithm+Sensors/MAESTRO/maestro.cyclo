@@ -1,5 +1,0 @@
-../Algorithm+Sensors/MAESTRO/maestro.c:20:10:degreetoUs	3
-../Algorithm+Sensors/MAESTRO/maestro.c:54:6:MaestroInit	1
-../Algorithm+Sensors/MAESTRO/maestro.c:73:6:Maestro_SetTarget	3
-../Algorithm+Sensors/MAESTRO/maestro.c:111:6:Maestro_SetSpeed	3
-../Algorithm+Sensors/MAESTRO/maestro.c:147:6:Maestro_SetAccel	3

@@ -1,3 +1,0 @@
-../Algorithm+Sensors/PID/pid.c:11:6:PID_Init	32	static
-../Algorithm+Sensors/PID/pid.c:21:6:PID_Reset	16	static
-../Algorithm+Sensors/PID/pid.c:26:7:PID_Calculate	40	static
