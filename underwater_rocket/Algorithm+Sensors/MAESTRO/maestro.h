@@ -10,7 +10,6 @@
 
 #include "stm32f4xx_hal.h"
 
-
 /*
  * Servo minimum and maximum us settings
  */

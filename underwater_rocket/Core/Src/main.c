@@ -48,14 +48,20 @@
 
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
+I2C_HandleTypeDef hi2c2;
 I2C_HandleTypeDef hi2c3;
 DMA_HandleTypeDef hdma_i2c1_rx;
 DMA_HandleTypeDef hdma_i2c1_tx;
+DMA_HandleTypeDef hdma_i2c2_rx;
+DMA_HandleTypeDef hdma_i2c2_tx;
 DMA_HandleTypeDef hdma_i2c3_rx;
 DMA_HandleTypeDef hdma_i2c3_tx;
 
 UART_HandleTypeDef huart4;
+UART_HandleTypeDef huart1;
 UART_HandleTypeDef huart3;
+DMA_HandleTypeDef hdma_usart1_rx;
+DMA_HandleTypeDef hdma_usart1_tx;
 
 /* USER CODE BEGIN PV */
 #define DWT_CTRL    (*(volatile uint32_t*)0xE0001000)
@@ -67,18 +73,17 @@ static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_UART4_Init(void);
-static void MX_USART3_UART_Init(void);
 static void MX_I2C3_Init(void);
+static void MX_I2C2_Init(void);
+static void MX_USART3_UART_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 
+extern void Callback_BNO_DMA_Rx();
 
-char msg_buffer[50];
-uint8_t msg_idx = 0;
-uint8_t ui8ReceivedData;
 
 extern  void SEGGER_UART_init(uint32_t);
-Maestro_Handler_t maestro = { &huart4 , FAST  , FAST};
 
 /* USER CODE END PFP */
 
@@ -122,8 +127,10 @@ int main(void)
   MX_DMA_Init();
   MX_I2C1_Init();
   MX_UART4_Init();
-  MX_USART3_UART_Init();
   MX_I2C3_Init();
+  MX_I2C2_Init();
+  MX_USART3_UART_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
 
@@ -131,9 +138,7 @@ int main(void)
   DWT_CTRL |= ( 1 << 0);
  SEGGER_UART_init(500000);
  SEGGER_SYSVIEW_Conf();
- HAL_UART_Receive_IT(&huart3, &ui8ReceivedData, 1);
- uint8_t data = 'a';
- HAL_UART_Transmit(&huart3, &data, 1, HAL_MAX_DELAY);
+
  System_Tasks_Init();
   //if the control comes here, then the launch of the scheduler has failed due to
   //insufficient memory in heap
@@ -233,6 +238,40 @@ static void MX_I2C1_Init(void)
 }
 
 /**
+  * @brief I2C2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C2_Init(void)
+{
+
+  /* USER CODE BEGIN I2C2_Init 0 */
+
+  /* USER CODE END I2C2_Init 0 */
+
+  /* USER CODE BEGIN I2C2_Init 1 */
+
+  /* USER CODE END I2C2_Init 1 */
+  hi2c2.Instance = I2C2;
+  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c2.Init.OwnAddress1 = 0;
+  hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c2.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c2.Init.OwnAddress2 = 0;
+  hi2c2.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c2.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C2_Init 2 */
+
+  /* USER CODE END I2C2_Init 2 */
+
+}
+
+/**
   * @brief I2C3 Initialization Function
   * @param None
   * @retval None
@@ -300,6 +339,39 @@ static void MX_UART4_Init(void)
 }
 
 /**
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART1_Init 0 */
+
+  /* USER CODE END USART1_Init 0 */
+
+  /* USER CODE BEGIN USART1_Init 1 */
+
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
+
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
   * @brief USART3 Initialization Function
   * @param None
   * @retval None
@@ -315,7 +387,7 @@ static void MX_USART3_UART_Init(void)
 
   /* USER CODE END USART3_Init 1 */
   huart3.Instance = USART3;
-  huart3.Init.BaudRate = 9600;
+  huart3.Init.BaudRate = 115200;
   huart3.Init.WordLength = UART_WORDLENGTH_8B;
   huart3.Init.StopBits = UART_STOPBITS_1;
   huart3.Init.Parity = UART_PARITY_NONE;
@@ -340,6 +412,7 @@ static void MX_DMA_Init(void)
 
   /* DMA controller clock enable */
   __HAL_RCC_DMA1_CLK_ENABLE();
+  __HAL_RCC_DMA2_CLK_ENABLE();
 
   /* DMA interrupt init */
   /* DMA1_Stream0_IRQn interrupt configuration */
@@ -348,12 +421,24 @@ static void MX_DMA_Init(void)
   /* DMA1_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA1_Stream4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
   /* DMA1_Stream6_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream6_IRQn, 6, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream6_IRQn);
+  /* DMA1_Stream7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream7_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream7_IRQn);
+  /* DMA2_Stream2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream2_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream2_IRQn);
+  /* DMA2_Stream7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 6, 0);
+  HAL_NVIC_EnableIRQ(DMA2_Stream7_IRQn);
 
 }
 
@@ -444,14 +529,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(BOOT1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : CLK_IN_Pin */
-  GPIO_InitStruct.Pin = CLK_IN_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-  HAL_GPIO_Init(CLK_IN_GPIO_Port, &GPIO_InitStruct);
-
   /*Configure GPIO pins : LD4_Pin LD3_Pin LD5_Pin LD6_Pin
                            Audio_RST_Pin */
   GPIO_InitStruct.Pin = LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
@@ -469,14 +546,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Alternate = GPIO_AF6_SPI3;
   HAL_GPIO_Init(I2S3_MCK_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : VBUS_FS_Pin */
-  GPIO_InitStruct.Pin = VBUS_FS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(VBUS_FS_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : OTG_FS_ID_Pin OTG_FS_DM_Pin OTG_FS_DP_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_ID_Pin|OTG_FS_DM_Pin|OTG_FS_DP_Pin;
+  /*Configure GPIO pins : OTG_FS_DM_Pin OTG_FS_DP_Pin */
+  GPIO_InitStruct.Pin = OTG_FS_DM_Pin|OTG_FS_DP_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -515,100 +586,31 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 /* USER CODE BEGIN 4 */
 
-/*
-static void vPidTask(void *pvParameters){
-        BNO055_Data_t local;
-        float avg_pitch = 0;
-        float avg_yaw = 0;
-        float sum_pitch = 0;
-        float sum_yaw = 0;
-        uint8_t len = 0;
-        char buff[50];
-        float pitch_deg;
-        float yaw_deg;
-        TickType_t xLastWakeTime;
-        const TickType_t xFrequency = pdMS_TO_TICKS(100); // 100ms (0.1s)
-        xLastWakeTime = xTaskGetTickCount(); // Başlangıç zamanını al
 
-        PID_Config_t pitchPID = {1 , 0 , 0 , 0.1 , 0 , 0 , 65 , 100};
-        PID_Config_t yawPID =   {1 , 0 , 0 , 0.1 , 0 , 0 ,65 , 100};
+void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if(hi2c->Instance == I2C3) // MS5837
+    {
+        //MS5837_DMA_Callback();
+    }
 
-        for(;;)
-        {
-
-          avg_pitch = 0;
-          sum_pitch = 0;
-          len = 0;
-
-          while(xQueueReceive(xImuQueue, (void *)&local , 0) == pdTRUE){
-              sum_pitch += local.pitch;
-              sum_yaw += local.heading;
-              len ++;
-          }
-
-
-
-          snprintf(buff , 50 , "Length = %d " , len);
-          SEGGER_SYSVIEW_Print(buff);
-
-          if(len > 0) {
-            avg_pitch = sum_pitch/len;
-            avg_yaw = sum_yaw/len;
-            snprintf(buff , 50 , "Average Pitch: %.2f , Avg Yaw: %.2f" , avg_pitch , avg_yaw);
-            SEGGER_SYSVIEW_PrintfTarget(buff);
-          }
-          else SEGGER_SYSVIEW_Print("Empty Queue");
-
-          pitch_deg = PID_Calculate(&pitchPID, avg_pitch);
-          yaw_deg = PID_Calculate(&yawPID , avg_yaw);
-          snprintf(buff , 50 , "Servo deg: %.2f , yaw_deg: %2.f" , pitch_deg , yaw_deg);
-          SEGGER_SYSVIEW_Print(buff);
-
-          Maestro_SetTarget(&maestro, CH0 | CH1 , pitch_deg);
-
-          vTaskDelayUntil(&xLastWakeTime , xFrequency);
-        }
+    else if(hi2c == &hi2c2)
+       {
+           Callback_BNO_DMA_Rx();
+       }
 }
 
-
-
-static void vMS5837Task(void *pvParameters){
-    MS5837_Init(&dev, &hi2c1);
-    char msg[20];
-    for(;;){
-
-      if(xSemaphoreTake(xI2CMutex, portMAX_DELAY) == pdTRUE)
-                      {
-                          MS5837_Calculate(&dev);
-                          g_depth_data = dev.depth;
-                          xSemaphoreGive(xI2CMutex);
-                      }
-      xQueueSend(xMS5837Queue, ((void *)&dev.depth) , 1 );
-      snprintf(msg , 50 , "Depth: %.3f Temp: %ld" , dev.depth ,dev.TEMP);
-      SEGGER_SYSVIEW_Print(msg);
-      vTaskDelay(20);
+// 3. MASTER YAZMA (MS5837 Komut Gönderme İçin) - BUNU EKLE!
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if(hi2c->Instance == I2C3) // MS5837
+    {
+        MS5837_DMA_Callback();
     }
 }
 
-
-*/
 
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart) {
-  if (huart->Instance == USART3) {
-    SEGGER_SYSVIEW_Print("ISR taken");
-    msg_buffer[msg_idx] = ui8ReceivedData;
-
-    // Mesaj Bitti mi?
-    if (ui8ReceivedData == '\n' || msg_idx >= 49) {
-      msg_buffer[msg_idx + 1] = '\0';
-      msg_idx = 0;
-      BT_ISR_Data_Handler(msg_buffer);
-    } else {
-      msg_idx++;
-    }
-    HAL_UART_Receive_IT(&huart3, &ui8ReceivedData, 1);
-  }
-
 }
 
 

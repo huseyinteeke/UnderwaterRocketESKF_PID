@@ -20,11 +20,11 @@ void MS5837_DMA_Error_Callback(void);
  * ********HAL COMMUNICATION LAYERS******************
  */
 extern I2C_HandleTypeDef hi2c1;
-extern I2C_HandleTypeDef hi2c3;
-extern UART_HandleTypeDef huart3;
-extern UART_HandleTypeDef huart4;
+extern I2C_HandleTypeDef hi2c2;
+extern UART_HandleTypeDef huart1;
+//extern UART_HandleTypeDef huart4;
 
-Maestro_Handler_t ServoDriver;
+Maestro_Handler_t ServoDriver = { &huart1 , FAST  , FAST};
 
 static float lastUpdatedDepth;
 static float lastUpdatedPitch;
@@ -90,7 +90,6 @@ static TaskHandle_t xTaskBNO_Read;
 static TaskHandle_t xTaskYawRollControl;
 static TaskHandle_t xTaskPitchControl;
 static TaskHandle_t xTaskMS5837;
-static TaskHandle_t xTaskBluetooth;
 
 /*
  * BT message handle
@@ -100,7 +99,6 @@ static void vBNOTask(void *pvParameters);
 static void vPitchPidTask(void *pvParameters);
 static void vYawRollPidTask(void *pvParameters);
 static void vMS5837Task(void *pvParameters);
-static void vBTTask(void *pvParameters);
 
 
 /*
@@ -119,7 +117,7 @@ void System_Tasks_Init(void){
     vQueueAddToRegistry(xQueuePitch,   "Q_Pitch");
 
 
-    MaestroInit(&ServoDriver , &huart3 , MID , MID);
+    MaestroInit(&ServoDriver , &huart1 , MID , MID);
 
     if(xBNO_DMA_Semaphore){
         xTaskCreate(vBNOTask ,
@@ -151,77 +149,15 @@ void System_Tasks_Init(void){
                         NULL,
                         TASK_PRIORITY_PITCH_CONTROL,
                         &xTaskPitchControl);
-        xTaskCreate(vBTTask,
-                "BT task",
-                TASK_STACK_BT,
-                NULL,
-                TASK_PRIORITY_BT,
-                &xTaskBluetooth);
+
     vTaskStartScheduler();
 }
 
 
 
-/******************************************************************************
- * ************************BT ISR HANDLER***************************************
- ******************************************************************************/
-void BT_ISR_Data_Handler(char* message)
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    g_latest_BT_Msg_Ptr = message;
-    vTaskNotifyGiveFromISR(xTaskBluetooth , &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
 
 
 
-
-/******************************************************************************
- * ************************BT TASK***************************************
- ******************************************************************************/
-static void vBTTask(void *pvParameters) {
-  ParsedCommand_t cmd;
-  for (;;) {
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    SEGGER_SYSVIEW_Print("BT TASK ACTIVE");
-
-    if (Comm_Get_Parsed_Command(&cmd)) {
-      switch (cmd.type) {
-      case CMD_ARM:
-        g_ARM_STATUS = 1;
-        //xTaskNotify __ ENGINE task
-        Comm_Send_Response("ARMED\n");
-        break;
-
-      case CMD_DISARM:
-        g_ARM_STATUS = 0;
-        //xTaskNotify __ ENGINE task
-        Comm_Send_Response("DISARMED\n");
-        break;
-      case CMD_SET_PID_PITCH:
-        g_PitchPID.Kp = cmd.val1;
-        g_PitchPID.Kd = cmd.val2;
-        g_PitchPID.Ki = cmd.val3;
-        Comm_Send_Response("Done Pitch PID");
-        break;
-      case CMD_SET_PID_YAW:
-        g_YawPID.Kp = cmd.val1;
-        g_YawPID.Kd = cmd.val2;
-        g_YawPID.Ki = cmd.val3;
-        Comm_Send_Response("Done Yaw PID");
-        break;
-      case CMD_LED:
-        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-        Comm_Send_Response("Done LED");
-        break;
-      default:
-        break;
-      }
-
-     }
-
-   }
-}
 
 /******************************************************************************
  * ************************BNO READ TASK***************************************
@@ -230,7 +166,7 @@ static void vBNOTask(void *pvParameters)
 {
   BNO_Status_t status;
   BNO055Init_TypeDef_t localBNO = {
-      .i2cHandler = &hi2c1,
+      .i2cHandler = &hi2c2,
       .i2cAddress = BNO055_I2C_ADDR_LOW,
       .i2cTimeout = 10,
       .dmaRxCallback    = Callback_BNO_DMA_Rx,
@@ -239,7 +175,7 @@ static void vBNOTask(void *pvParameters)
       .powerMode     = BNO_PWR_MODE_NORMAL,
       .operationMode = BNO_MODE_NDOF,
       .externalCrystal = 0,
-      .axisRemap = BNO_AXIS_REMAP_P1,
+      .axisRemap = BNO_AXIS_REMAP_P0,
       .accelUnit = BNO_ACC_UNIT_MS2,
       .gyroUnit  = BNO_GYRO_UNIT_DPS,
       .eulerUnit = BNO_EULER_UNIT_DEG,
@@ -264,20 +200,21 @@ static void vBNOTask(void *pvParameters)
 
   //char msg[50];
   for(;;){
-       BNO055_ReadEuler_DMA(&localBNO, DMA_rx_buffer);
+    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler ,
+          localBNO.i2cAddress,
+          BNO055_EUL_HEADING_LSB,
+          1,
+          DMA_rx_buffer,
+          6);
+       ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+       BNO055_ParseEulerBuffer(&localBNO, DMA_rx_buffer, &tmp);
+       float mapped_heading = 450.0f - tmp.heading;
+       while (mapped_heading >= 360.0f) mapped_heading -= 360.0f;
+       while (mapped_heading < 0.0f)    mapped_heading += 360.0f;
+       lastUpdatedYaw = mapped_heading;
 
-       if(xSemaphoreTake(xBNO_DMA_Semaphore , pdMS_TO_TICKS(20)) == pdTRUE){
-           BNO055_ParseEulerBuffer(&localBNO, DMA_rx_buffer, &tmp);
-           tx_YawRoll.heading = tmp.heading;
-           tx_YawRoll.roll    = tmp.roll;
-           tx_Pitch.pitch     = tmp.pitch;
-           xQueueSend(xQueuePitch   , &tx_Pitch     , 0);
-           xQueueSend(xQueueYawRoll , &tx_YawRoll   , 0);
-       }
-
-       portENTER_CRITICAL();
-       lastUpdatedYaw = tx_YawRoll.heading;
-       portEXIT_CRITICAL();
+       lastUpdatedRoll    = tmp.roll;
+       lastUpdatedPitch    = tmp.pitch;
        vTaskDelayUntil(&xLastWakeTime , xFrequency);
 
   }
@@ -290,7 +227,7 @@ static void vBNOTask(void *pvParameters)
 static void vMS5837Task(void *pvParameters){
     static MS5837_t localMS5837;
     localMS5837.Delay = My_RTOS_Delay_Func;
-    if(MS5837_Init(&localMS5837, &hi2c3) != HAL_OK){
+    if(MS5837_Init(&localMS5837, &hi2c1) != HAL_OK){
             SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
             vTaskDelete(NULL);
     }
@@ -383,20 +320,6 @@ static void vYawRollPidTask(void *pvParameters){
 }
 
 
-/********************************************************************************
- **********************************STACK OVERFLOW CHECKER***********************
- ******************************************************************************/
-void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
-{
-
-    Comm_Send_Response("FATAL: STACK OVERFLOW -> ");
-    Comm_Send_Response(pcTaskName); // Hangi task öldü?
-
-    // Motorları acil durdur!
-    //Motor_Disarm();
-
-    for(;;); // Sonsuz döngüde bekle
-}
 
 /*****************************************************************************
  *****************************BNO DMA HELPERS*********************************
@@ -404,7 +327,7 @@ void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
 void Callback_BNO_DMA_Rx(void)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(xBNO_DMA_Semaphore, &xHigherPriorityTaskWoken);
+    vTaskNotifyGiveFromISR(xTaskBNO_Read , &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
@@ -432,31 +355,13 @@ void My_RTOS_Delay_Func(uint32_t period_ms)
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-    // BNO055 I2C1 hattında ise:
-    if(hi2c->Instance == I2C1)
+    if(hi2c->Instance == I2C2)
     {
-        // Direkt dosya içindeki fonksiyonu çağırıyoruz
         Callback_BNO_DMA_Rx();
     }
 }
 
 // 2. MASTER OKUMA (MS5837 Veri Okuma İçin) - BUNU EKLE!
-void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-    if(hi2c->Instance == I2C3) // MS5837
-    {
-        MS5837_DMA_Callback();
-    }
-}
-
-// 3. MASTER YAZMA (MS5837 Komut Gönderme İçin) - BUNU EKLE!
-void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
-{
-    if(hi2c->Instance == I2C3) // MS5837
-    {
-        MS5837_DMA_Callback();
-    }
-}
 
 // Error callbacks
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)

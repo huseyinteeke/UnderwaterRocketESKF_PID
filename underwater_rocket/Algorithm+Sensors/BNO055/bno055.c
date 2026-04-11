@@ -82,15 +82,6 @@ static inline void BNO_Delay(BNO055Init_TypeDef_t *dev , uint32_t ms){
  */
 
 BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
-	/*
-	 * At first , essential initialization should be applied
-	 */
-	// ---------------------------------------------------------
-	// STEP 1 -> Communication test and Reset
-	// ---------------------------------------------------------
-	// 1.1. I2C bus check
-
-
   HAL_StatusTypeDef status = HAL_ERROR;
   status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress, 3,
       dev->i2cTimeout);
@@ -114,120 +105,50 @@ BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
 
 	if(id != 0xA0) return BNO_ID_ERROR;
 
-
-	// 1.4. Software reset
-	// Clear before modes.
-	// SYS_TRIGGER (0x3F) register 5. bit =  1 .
-	BNO_WriteReg(dev, BNO055_SYS_TRIGGER, 0x20); // 0010 0000 (0x20)
-
-	// Datasheet: "Reset sonrası POR (Power On Reset) süresi 650ms'dir."
-	// guaranteed -> 800 ms.
+	BNO_WriteReg(dev, BNO055_SYS_TRIGGER, 0x20);
 	BNO_Delay(dev , 800);
 
-	// ---------------------------------------------------------
-	// STEP 2: CONFIG Mode
-	// ---------------------------------------------------------
-	// To chnge settings -> CONFIG_MODE (0x00)
-	// Reset sonrası zaten buradadır ama biz emin olalım.
-
 	BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
-	BNO_Delay(dev , 20); // Waiting for mode change
-
-	// ---------------------------------------------------------
-	// STEP 3: User Config
-	// ---------------------------------------------------------
-
-	// 3.1. Power Mode (Normal, Low Power vs.)
+	BNO_Delay(dev , 20);
 	BNO_WriteReg(dev, BNO055_PWR_MODE, dev->powerMode);
 	BNO_Delay(dev , 10);
 
-	// 3.2. Page 0 settings: UNIT_SEL
-	// Kullanıcının seçtiği enum'ları birleştirip tek byte yapıyoruz.
-	// [ORI:7] [TEMP:4] [EUL:2] [GYR:1] [ACC:0]
 	uint8_t units_reg = 0;
 	units_reg |= (dev->accelUnit << 0);
 	units_reg |= (dev->gyroUnit << 1);
 	units_reg |= (dev->eulerUnit << 2);
 	units_reg |= (dev->tempUnit << 4);
-	units_reg |= (1 << 7); // Android Orientation (Sabit önerilir demiştik)
+	units_reg |= (1 << 7);
 
 	BNO_WriteReg(dev, BNO055_UNIT_SEL, units_reg);
 
-	// 3.3. Eksen Yönlendirmesi (Axis Remap)
-	// Tablodan değerleri çekip yazıyoruz.
+
 	uint8_t p_idx = dev->axisRemap;
 	p_idx &= 0x07; // Hata koruması
 
 	BNO_WriteReg(dev, BNO055_AXIS_MAP_CNFG, REMAP_CONFIG_TABLE[p_idx][0]);
 	BNO_WriteReg(dev, BNO055_AXIS_MAP_SIGN, REMAP_CONFIG_TABLE[p_idx][1]);
 
-	// 3.4. External crystal
-	// SYS_TRIGGER (0x3F) -> Bit 7 (CLK_SEL)
-
 	uint8_t trigger = BNO_ReadReg(dev, BNO055_SYS_TRIGGER);
 	trigger &= ~0x80;
 
 	if (dev->externalCrystal == BNO_CLK_EXTERNAL) {
-		// 0x80 = Harici Kristal
 		trigger |= 0x80;
 	}
 	BNO_WriteReg(dev, BNO055_SYS_TRIGGER, trigger);
 
-	BNO_Delay(dev ,10); // Saat değişimi
-
-	// ---------------------------------------------------------
-	// ADIM 4: Kalibrasyon Yükleme (Opsiyonel)
-	// ---------------------------------------------------------
+	BNO_Delay(dev ,10);
 	if (dev->useStoredCalibration) {
-		// 22 Byte'lık kalibrasyon verisini tek seferde (Burst) yaz.
-		// ACC_OFFSET_X_LSB (0x55) adresinden başlar.
 		BNO_WriteMulti(dev, BNO055_ACC_OFFSETX_LSB, dev->calibrationData, 22);
-
-		// Sensörün bu verileri işlemesi için zaman tanı
 		BNO_Delay(dev ,100);
-
-		// NOT: Radius registerlarını da yükledik, bu sensörün
-		// hemen "Calibrated" durumuna geçmesini sağlar.
 	}
-
-	//After offsets - we should go to the config mode again
 	BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
 	BNO_Delay(dev ,20);
-
-	/*
-	// 1. Page 1'e geç (Interrupt ayarları buradadır)
-	BNO_SetPage(dev, 1);
-
-	// 2. Data Ready Interrupt'ı aktif et (Örn: Gyro veya Accel için)
-	// BNO055_INT_EN (0x10) -> Bit 0: Accel, Bit 2: Gyro, Bit 3: Mag
-	BNO_WriteReg(dev, 0x10, 0x01); // Şimdilik sadece Accel Data Ready
-
-	// 3. Interrupt'ı INT pinine yönlendir (BNO055_INT_MSK - 0x0F)
-	BNO_WriteReg(dev, 0x0F, 0x01);
-
-	// 4. Page 0'a geri dön
-	BNO_SetPage(dev, 0);
-  */
-	// ---------------------------------------------------------
-	// ADIM 5: Operasyon Moduna Geçiş (Start!)
-	// ---------------------------------------------------------
-	// Artık veri okumaya başlamak için seçilen moda (Örn: NDOF) geçiyoruz.
-
 	BNO_WriteReg(dev, BNO055_OPR_MODE, dev->operationMode);
-
-	// Datasheet: "Config modundan diğer modlara geçiş 7ms sürer."
-	// Biz garanti olsun diye 30ms verelim.
 	BNO_Delay(dev , 30);
-
-	// ---------------------------------------------------------
-	// ADIM 6: Son Kontrol (Başarılı mı?)
-	// ---------------------------------------------------------
-	// SYS_STAT (0x39) registerına bak. Eğer hata varsa (0x01) bildir.
 	uint8_t sys_stat = BNO_ReadReg(dev, BNO055_SYS_STAT);
-
 	if (sys_stat == 0x01) {
-		// Hata kodu var, ne olduğunu öğrenelim
-		// (Bu kısmı istersen struct içine kaydedebilirsin)
+
 		uint8_t err =BNO_ReadReg(dev , BNO055_SYS_ERR);
 		dev->lastError = err;
 		return BNO_SYS_ERROR;
