@@ -19,8 +19,8 @@
 #define SERVO_MIN_US	((uint16_t)(1000))	//0 degrees
 #define SERVO_MAX_US	((uint16_t)(2000))  //180 degrees
 
-#define SERVO_MAX_DEG	((int8_t)(65))
-#define SERVO_MIN_DEG	((int8_t)(-65))
+#define SERVO_MAX_DEG	((int8_t)(130))
+#define SERVO_MIN_DEG	((int8_t)(0))
 
 #define MAESTRO_ACCEL_MAX (255U)
 #define MAESTRO_ACCEL_MIN (0U)
@@ -45,10 +45,10 @@
  */
 
 typedef enum{
-	CH0 = 0b0001,
-	CH1 = 0b0010,
-	CH2 = 0b0100,
-	CH3 = 0b0001
+	CH0 = 1,
+	CH1 = 2,
+	CH2 = 3,
+	CH3 = 4
 }MaestroChannel_TypeDef_t;
 
 /*
@@ -83,9 +83,9 @@ typedef struct{
  * Function Prototypes
  */
 void MaestroInit(Maestro_Handler_t *dev , UART_HandleTypeDef *huart , MaestroAccel_Speed_TypeDef_t speed , MaestroAccel_Speed_TypeDef_t accel);
-void Maestro_SetTarget(Maestro_Handler_t *dev , MaestroChannel_TypeDef_t channel , int8_t degrees);
-void Maestro_SetSpeed(Maestro_Handler_t *dev ,  MaestroChannel_TypeDef_t channels);
-void Maestro_SetAccel(Maestro_Handler_t *dev ,  MaestroChannel_TypeDef_t channels);
+void Maestro_SetTarget(Maestro_Handler_t *dev , MaestroChannel_TypeDef_t channel , int8_t degrees , uint8_t* command);
+void Maestro_SetSpeed(Maestro_Handler_t *dev ,  MaestroChannel_TypeDef_t channels , uint8_t* command);
+void Maestro_SetAccel(Maestro_Handler_t *dev ,  MaestroChannel_TypeDef_t channels , uint8_t* command);
 
 
 #endif /* INC_MAESTRO_H_ */

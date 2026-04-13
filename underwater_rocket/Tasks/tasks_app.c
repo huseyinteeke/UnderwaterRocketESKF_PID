@@ -78,10 +78,7 @@ volatile uint8_t g_ARM_STATUS = 0;
 
 /* Queue Handles */
 
-static QueueHandle_t xQueueYawRoll;                   // Yaw data queue
-static QueueHandle_t xQueuePitch;                // Pitch/Roll data queue
-static QueueHandle_t xQueueDepth;               // Depth data queue
-
+static QueueHandle_t xMaestroCmdQueue;
 /* Semaphore Handles */
 static SemaphoreHandle_t xBNO_DMA_Semaphore;  // BNO055 DMA complete signal
 static SemaphoreHandle_t xMS5837_BinarySem;   // NS5837 DMA complete signal
@@ -90,7 +87,7 @@ static TaskHandle_t xTaskBNO_Read;
 static TaskHandle_t xTaskYawRollControl;
 static TaskHandle_t xTaskPitchControl;
 static TaskHandle_t xTaskMS5837;
-
+static TaskHandle_t xMaestroGateKeeper;
 /*
  * BT message handle
  */
@@ -99,34 +96,31 @@ static void vBNOTask(void *pvParameters);
 static void vPitchPidTask(void *pvParameters);
 static void vYawRollPidTask(void *pvParameters);
 static void vMS5837Task(void *pvParameters);
-
+static void vMaestroGatekeeperTask(void* pvParameters);
 
 /*
  * ################GLOBAL SYSTEM INIT FUNCTION######################
  */
 
 void System_Tasks_Init(void){
-    xQueueYawRoll       = xQueueCreate(QUEUE_SIZE_YAW       , sizeof(YawRollData_t));
-    xQueuePitch         = xQueueCreate(QUEUE_SIZE_PITCHROLL , sizeof(PitchData_t));
-    xQueueDepth         = xQueueCreate(QUEUE_SIZE_DEPTH     , sizeof(DepthData_t));
-    xBNO_DMA_Semaphore  = xSemaphoreCreateBinary();
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
+    xMaestroCmdQueue    = xQueueCreate(5 , sizeof(MaestroMsg_t));
+    //vQueueAddToRegistry(xBNO_DMA_Semaphore, "PID queue");
 
-    vQueueAddToRegistry(xQueueYawRoll, "Q_YawRoll");
-    vQueueAddToRegistry(xQueueDepth,   "Q_Depth");
-    vQueueAddToRegistry(xQueuePitch,   "Q_Pitch");
+    __HAL_UART_DISABLE_IT(&huart1, UART_IT_TC);
 
+    // Diğer RX interrupt'ları kapat (ekstra güvenlik)
+    __HAL_UART_DISABLE_IT(&huart1, UART_IT_RXNE);
+    __HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
 
-    MaestroInit(&ServoDriver , &huart1 , MID , MID);
+    uint8_t status;
+    status = xTaskCreate(vBNOTask ,
+                "BNO_READ" ,
+                TASK_STACK_BNO_READ ,
+                NULL,
+                TASK_PRIORITY_BNO_READ ,
+                &xTaskBNO_Read);
 
-    if(xBNO_DMA_Semaphore){
-        xTaskCreate(vBNOTask ,
-                    "BNO_READ" ,
-                    TASK_STACK_BNO_READ ,
-                    NULL,
-                    TASK_PRIORITY_BNO_READ ,
-                    &xTaskBNO_Read);
-    }
      if(xMS5837_BinarySem){
          xTaskCreate(vMS5837Task,
                         "MS5837_READ",
@@ -149,6 +143,13 @@ void System_Tasks_Init(void){
                         NULL,
                         TASK_PRIORITY_PITCH_CONTROL,
                         &xTaskPitchControl);
+
+        xTaskCreate(vMaestroGatekeeperTask ,
+                    "Maestro gate keeper",
+                    TASK_STACK_PITCH_CONTROL,
+                    NULL,
+                    TASK_PID_MSG,
+                    &xMaestroGateKeeper);
 
     vTaskStartScheduler();
 }
@@ -190,8 +191,6 @@ static void vBNOTask(void *pvParameters)
           HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
           vTaskDelete(NULL);
       }
-  YawRollData_t tx_YawRoll;
-  PitchData_t   tx_Pitch;
   BNO055_EulerData_t tmp;
   static uint8_t DMA_rx_buffer[6];
 
@@ -280,7 +279,7 @@ static void vMS5837Task(void *pvParameters){
       lastUpdatedDepth = tx_Depth.depth;
       portEXIT_CRITICAL();
 
-      xQueueSend(xQueueDepth, &tx_Depth, 0);
+      //xQueueSend(xQueueDepth, &tx_Depth, 0);
       //We already waited for 20 seconds during tasks.
       vTaskDelayUntil(&xLastWakeTime , xFrequency);
     }
@@ -290,14 +289,20 @@ static void vMS5837Task(void *pvParameters){
 
 
 static void vPitchPidTask(void *pvParameters){
-    MaestroChannel_TypeDef_t channels = CH0 | CH1;
+    MaestroMsg_t msg = {.channel = CH0 | CH1 ,.target = 0};
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
     float servo_cmd;
     xLastWakeTime = xTaskGetTickCount();
   for(;;){
     servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth);
-    Maestro_SetTarget(&ServoDriver , channels , servo_cmd);
+    msg.channel = 0;
+    msg.target = servo_cmd;
+    xQueueSend(xMaestroCmdQueue, &msg, 0);
+
+    msg.channel = 1;
+    msg.target = servo_cmd;
+    xQueueSend(xMaestroCmdQueue, &msg, 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
@@ -307,19 +312,31 @@ static void vPitchPidTask(void *pvParameters){
 
 
 static void vYawRollPidTask(void *pvParameters){
-  MaestroChannel_TypeDef_t channels = CH2 | CH3;
+  MaestroMsg_t msg = {.channel = CH2 | CH3 ,.target = 0};
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
   float servo_cmd;
   xLastWakeTime = xTaskGetTickCount();
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
-    Maestro_SetTarget(&ServoDriver , channels , servo_cmd);
+    msg.target = servo_cmd;
+    //xQueueSend(xMaestroCmdQueue , &msg , 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
 
+static void vMaestroGatekeeperTask(void *pvParameters) {
+    MaestroMsg_t msg;
+    static uint8_t command[4];
 
+    for(;;) {
+        if (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
+            Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, command);
+            HAL_UART_Transmit_DMA(ServoDriver.huart, command, 4);
+            ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+        }
+    }
+}
 
 /*****************************************************************************
  *****************************BNO DMA HELPERS*********************************
@@ -360,6 +377,16 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
         Callback_BNO_DMA_Rx();
     }
 }
+
+
+void Maestro_CallBack()
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(xMaestroGateKeeper , &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
 
 // 2. MASTER OKUMA (MS5837 Veri Okuma İçin) - BUNU EKLE!
 

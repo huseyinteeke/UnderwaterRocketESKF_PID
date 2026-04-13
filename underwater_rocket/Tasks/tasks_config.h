@@ -23,6 +23,8 @@
 ###############TASK PRIORITIES################################
 */
 #define TASK_PRIORITY_BNO_READ        (tskIDLE_PRIORITY + 2)
+#define TASK_PID_MSG                  (tskIDLE_PRIORITY + 4)
+
 #define TASK_PRIORITY_YAWROLL_CONTROL     (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_PITCH_CONTROL   (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_MS5837_READ     (tskIDLE_PRIORITY + 2)
@@ -31,10 +33,10 @@
 /*
  ############TASK STACK SIZES#################################3
  */
-#define TASK_STACK_BNO_READ             512
+#define TASK_STACK_BNO_READ             1024
 #define TASK_STACK_YAWROLL_CONTROL      1024
 #define TASK_STACK_PITCH_CONTROL        1024
-#define TASK_STACK_MS5837_READ          512
+#define TASK_STACK_MS5837_READ          1024
 #define TASK_STACK_BT                   1024
 
 /**************************************************************************
@@ -107,6 +109,12 @@ typedef struct {
     float val2;          // I
     float val3;          // D
 } ParsedCommand_t;
+
+typedef struct
+{
+  MaestroChannel_TypeDef_t channel;
+  float target;
+}MaestroMsg_t;
 
 
 //GLOBAL Functions
