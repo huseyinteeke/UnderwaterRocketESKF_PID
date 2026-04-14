@@ -21,10 +21,10 @@ void MS5837_DMA_Error_Callback(void);
  */
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
-extern UART_HandleTypeDef huart1;
+extern UART_HandleTypeDef huart3;
 //extern UART_HandleTypeDef huart4;
 
-Maestro_Handler_t ServoDriver = { &huart1 , FAST  , FAST};
+Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
 
 static float lastUpdatedDepth;
 static float lastUpdatedPitch;
@@ -105,13 +105,8 @@ static void vMaestroGatekeeperTask(void* pvParameters);
 void System_Tasks_Init(void){
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
     xMaestroCmdQueue    = xQueueCreate(5 , sizeof(MaestroMsg_t));
-    //vQueueAddToRegistry(xBNO_DMA_Semaphore, "PID queue");
 
-    __HAL_UART_DISABLE_IT(&huart1, UART_IT_TC);
 
-    // Diğer RX interrupt'ları kapat (ekstra güvenlik)
-    __HAL_UART_DISABLE_IT(&huart1, UART_IT_RXNE);
-    __HAL_UART_DISABLE_IT(&huart1, UART_IT_IDLE);
 
     uint8_t status;
     status = xTaskCreate(vBNOTask ,
@@ -289,7 +284,7 @@ static void vMS5837Task(void *pvParameters){
 
 
 static void vPitchPidTask(void *pvParameters){
-    MaestroMsg_t msg = {.channel = CH0 | CH1 ,.target = 0};
+    MaestroMsg_t msg = {.channel = CH0 ,.target = 0};
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
     float servo_cmd;
@@ -312,7 +307,7 @@ static void vPitchPidTask(void *pvParameters){
 
 
 static void vYawRollPidTask(void *pvParameters){
-  MaestroMsg_t msg = {.channel = CH2 | CH3 ,.target = 0};
+  MaestroMsg_t msg = {.channel = CH2 ,.target = 0};
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
   float servo_cmd;
@@ -320,20 +315,23 @@ static void vYawRollPidTask(void *pvParameters){
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
     msg.target = servo_cmd;
-    //xQueueSend(xMaestroCmdQueue , &msg , 0);
+    xQueueSend(xMaestroCmdQueue , &msg , 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
-
+uint8_t message = 0x55;
 static void vMaestroGatekeeperTask(void *pvParameters) {
     MaestroMsg_t msg;
     static uint8_t command[4];
-
+    HAL_StatusTypeDef status;
     for(;;) {
         if (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
             Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, command);
-            HAL_UART_Transmit_DMA(ServoDriver.huart, command, 4);
-            ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+            if(ServoDriver.huart->gState == HAL_UART_STATE_READY){
+              status = HAL_UART_Transmit_DMA(ServoDriver.huart, message, 1);
+            }
+           ulTaskNotifyTake(pdFALSE , portMAX_DELAY);
+
         }
     }
 }
