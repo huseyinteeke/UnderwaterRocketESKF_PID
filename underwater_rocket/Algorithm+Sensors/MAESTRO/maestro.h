@@ -27,7 +27,7 @@
 
 #define MAESTRO_SPEED_MAX (255U)
 #define MAESTRO_SPEED_MIN (0U)
-
+#define SERVO_CENTER_DEG  (65U)
 /*
  * SERIAL SERVO COMMANDS
  * Compact protocol: 0x84, channel number, target low bits, target high bits

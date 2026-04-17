@@ -21,10 +21,9 @@ void MS5837_DMA_Error_Callback(void);
  */
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
-extern UART_HandleTypeDef huart3;
-//extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart4;
 
-Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
+Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
 
 static float lastUpdatedDepth;
 static float lastUpdatedPitch;
@@ -40,9 +39,9 @@ static float lastUpdatedRoll;
 
 PID_Config_t g_PitchPID = {
     .Kp = 1.0f,
-    .Ki = 0.0f,   // Telefondan BT ile güncellenecek
-    .Kd = 0.0f,   // Telefondan BT ile güncellenecek
-    .dt = 0.1f,   // Task periyodun 100ms ise 0.1 saniye
+    .Ki = 0.0f,
+    .Kd = 0.0f,
+    .dt = 0.1f,
 
     .setpoint      = 0.0f, // Araç burnunu düz (0 derece) tutsun
     .lastError     = 0.0f, // Başlangıçta 0
@@ -56,12 +55,12 @@ PID_Config_t g_PitchPID = {
 PID_Config_t g_YawPID = {
     // --- Ayarlanabilir Katsayılar ---
     .Kp = 1.0f,
-    .Ki = 0.0f,
-    .Kd = 0.0f,
+    .Ki = 1.0f,
+    .Kd = 1.0f,
     .dt = 0.1f,
 
     // --- Durum Değişkenleri ---
-    .setpoint      = 0.0f, // Pusulada istenen baş açısı (Hedef)
+    .setpoint      = 90.0f, // Pusulada istenen baş açısı (Hedef)
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
@@ -104,7 +103,7 @@ static void vMaestroGatekeeperTask(void* pvParameters);
 
 void System_Tasks_Init(void){
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
-    xMaestroCmdQueue    = xQueueCreate(5 , sizeof(MaestroMsg_t));
+    xMaestroCmdQueue    = xQueueCreate(10 , sizeof(MaestroMsg_t));
 
 
 
@@ -205,10 +204,11 @@ static void vBNOTask(void *pvParameters)
        float mapped_heading = 450.0f - tmp.heading;
        while (mapped_heading >= 360.0f) mapped_heading -= 360.0f;
        while (mapped_heading < 0.0f)    mapped_heading += 360.0f;
+       portENTER_CRITICAL();
        lastUpdatedYaw = mapped_heading;
-
        lastUpdatedRoll    = tmp.roll;
        lastUpdatedPitch    = tmp.pitch;
+       portEXIT_CRITICAL();
        vTaskDelayUntil(&xLastWakeTime , xFrequency);
 
   }
@@ -290,7 +290,7 @@ static void vPitchPidTask(void *pvParameters){
     float servo_cmd;
     xLastWakeTime = xTaskGetTickCount();
   for(;;){
-    servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth);
+    servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth) + SERVO_CENTER_DEG;
     msg.channel = 0;
     msg.target = servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg, 0);
@@ -307,31 +307,54 @@ static void vPitchPidTask(void *pvParameters){
 
 
 static void vYawRollPidTask(void *pvParameters){
-  MaestroMsg_t msg = {.channel = CH2 ,.target = 0};
+  MaestroMsg_t msg;
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
   float servo_cmd;
   xLastWakeTime = xTaskGetTickCount();
   for(;;){
-    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
+    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw) + SERVO_CENTER_DEG;
+    msg.channel = 3;
     msg.target = servo_cmd;
-    xQueueSend(xMaestroCmdQueue , &msg , 0);
+    xQueueSend(xMaestroCmdQueue, &msg, 0);
+
+    msg.channel = 4;
+    msg.target = servo_cmd;
+    xQueueSend(xMaestroCmdQueue, &msg, 0);
+
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
-uint8_t message = 0x55;
+
+#define MAX_BATCH_SIZE  10
+#define CMD_LEN         4
+
+
 static void vMaestroGatekeeperTask(void *pvParameters) {
     MaestroMsg_t msg;
-    static uint8_t command[4];
-    HAL_StatusTypeDef status;
+    uint8_t command[4];
+    static uint8_t txBuffer[MAX_BATCH_SIZE * CMD_LEN];
+
     for(;;) {
         if (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
-            Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, command);
+            uint8_t count = 0;
+
+            Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, &txBuffer[count*CMD_LEN]);
+            count ++;
+
+            while (xQueueReceive(xMaestroCmdQueue, &msg, 0) == pdPASS) {
+              vTaskDelay(pdMS_TO_TICKS(1));
+                Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, &txBuffer[count * CMD_LEN]);
+                count++;
+                if (count >= MAX_BATCH_SIZE) {
+                    break;
+                }
+            }
+
             if(ServoDriver.huart->gState == HAL_UART_STATE_READY){
-              status = HAL_UART_Transmit_DMA(ServoDriver.huart, message, 1);
+              HAL_UART_Transmit_DMA(ServoDriver.huart, txBuffer , count * CMD_LEN);
             }
            ulTaskNotifyTake(pdFALSE , portMAX_DELAY);
-
         }
     }
 }

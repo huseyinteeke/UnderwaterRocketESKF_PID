@@ -17,7 +17,7 @@
  */
 extern void My_RTOS_Delay_Func(uint32_t period_ms);
 
-uint16_t degreetoUs(int8_t degrees){
+uint16_t degreetoUs(int16_t degrees){
 
 	if(degrees < SERVO_MIN_DEG){
 		degrees = SERVO_MIN_DEG;
