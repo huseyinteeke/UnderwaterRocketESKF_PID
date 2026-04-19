@@ -48,7 +48,7 @@ uint16_t degreetoUs(int16_t degrees){
  */
 
 
-void Maestro_SetTarget(Maestro_Handler_t *dev, MaestroChannel_TypeDef_t channels, int8_t degrees , uint8_t* command) {
+void Maestro_SetTarget(Maestro_Handler_t *dev, MaestroChannel_TypeDef_t channels, int16_t degrees , uint8_t* command) {
 	  uint16_t target_quarter_us = degreetoUs(degrees);
 	  command[0] = MAESTRO_CMD_SET_TARGET;
 		command[1]  = 	channels;

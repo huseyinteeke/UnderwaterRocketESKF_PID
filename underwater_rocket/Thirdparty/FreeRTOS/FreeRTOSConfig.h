@@ -90,6 +90,7 @@ to exclude the API function. */
 #define INCLUDE_vTaskDelay				1
 #define INCLUDE_xTaskGetSchedulerState    1
 #define INCLUDE_xTaskGetIdleTaskHandle  1
+#define INCLUDE_eTaskGetState    1
 #define INCLUDE_pxTaskGetStackStart		1
 
 /* Cortex-M specific definitions. */

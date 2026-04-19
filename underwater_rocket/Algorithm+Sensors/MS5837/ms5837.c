@@ -155,15 +155,24 @@ void MS5837_Calculate(MS5837_t *dev){
     dev->P    = (int32_t)pressure;  //mbar * 10
     dev->TEMP = TEMP;               //degree * 100
 
-    //If it is the first calculation == Take start as zero
     if(dev->surface_pressure == 0) {
             dev->surface_pressure = dev->P;
     }
 
-    if (dev->P > dev->surface_pressure) {
-        dev->depth = (dev->P - dev->surface_pressure) / (1029 * 9.80665) * 100; //Başlangıç noktasını 0 derinlik alıyoruz
-    } else {
-        dev->depth = 0; // Basınç düşükse hala havadayız demektir.
-    }
+  float delta_P_raw = (float)(dev->P - dev->surface_pressure);
 
+  if (delta_P_raw <= 0.0f) {
+      dev->depth = 0.0f; // Basınç yüzeyden düşük veya eşitse havadayız (0 metre)
+  } else {
+      // GERÇEK FİZİK HESABI:
+      // delta_P_raw değeri (mbar * 10) cinsindendir.
+      // Bunu Pascal (Pa) birimine çevirmek için 10 ile çarpmamız gerekir (1 mbar = 100 Pa).
+      // Formül: Derinlik (m) = Basınç(Pa) / (Yoğunluk * Yerçekimi)
+
+      float density = 997.0f;     // Tatlı su (havuz/şişe) için 997, Deniz (Teknofest) için 1029 yap
+      float gravity = 9.80665f;   // Yerçekimi ivmesi
+
+      // Sonuç doğrudan METRE cinsinden dev->depth değişkenine yazılır (Örn: 0.20 metre)
+      dev->depth = (delta_P_raw * 10.0f) / (density * gravity);
+  }
 }

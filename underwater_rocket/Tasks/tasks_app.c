@@ -22,9 +22,13 @@ void MS5837_DMA_Error_Callback(void);
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern UART_HandleTypeDef huart4;
+extern UART_HandleTypeDef huart5;
+extern TIM_HandleTypeDef htim2;
 
 Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
 
+
+static float lastUpdatedPressure;
 static float lastUpdatedDepth;
 static float lastUpdatedPitch;
 static float lastUpdatedYaw;
@@ -38,9 +42,9 @@ static float lastUpdatedRoll;
  */
 
 PID_Config_t g_PitchPID = {
-    .Kp = 1.0f,
-    .Ki = 0.0f,
-    .Kd = 0.0f,
+    .Kp = 3.0f,
+    .Ki = 0.2f,
+    .Kd = 0.2f,
     .dt = 0.1f,
 
     .setpoint      = 0.0f, // Araç burnunu düz (0 derece) tutsun
@@ -54,13 +58,12 @@ PID_Config_t g_PitchPID = {
 
 PID_Config_t g_YawPID = {
     // --- Ayarlanabilir Katsayılar ---
-    .Kp = 1.0f,
-    .Ki = 1.0f,
-    .Kd = 1.0f,
+    .Kp = 3.0f,
+    .Ki = 0.2f,
+    .Kd = 0.2f,
     .dt = 0.1f,
 
-    // --- Durum Değişkenleri ---
-    .setpoint      = 90.0f, // Pusulada istenen baş açısı (Hedef)
+    .setpoint      = 90.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
@@ -87,6 +90,9 @@ static TaskHandle_t xTaskYawRollControl;
 static TaskHandle_t xTaskPitchControl;
 static TaskHandle_t xTaskMS5837;
 static TaskHandle_t xMaestroGateKeeper;
+static TaskHandle_t xBLETask;
+static TaskHandle_t xEngineTask;
+
 /*
  * BT message handle
  */
@@ -96,12 +102,15 @@ static void vPitchPidTask(void *pvParameters);
 static void vYawRollPidTask(void *pvParameters);
 static void vMS5837Task(void *pvParameters);
 static void vMaestroGatekeeperTask(void* pvParameters);
+static void vBLETask(void * parameters);
+static void vEngineTask(void* parameters);
 
 /*
  * ################GLOBAL SYSTEM INIT FUNCTION######################
  */
 
 void System_Tasks_Init(void){
+
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
     xMaestroCmdQueue    = xQueueCreate(10 , sizeof(MaestroMsg_t));
 
@@ -145,6 +154,22 @@ void System_Tasks_Init(void){
                     TASK_PID_MSG,
                     &xMaestroGateKeeper);
 
+       xTaskCreate(vBLETask ,
+                    "BLE task",
+                    TASK_STACK_BT,
+                    NULL,
+                    TASK_PRIORITY_BT,
+                    &xBLETask
+        );
+
+
+       xTaskCreate(vEngineTask,
+                    "Engine Task",
+                    1024,
+                    NULL,
+                    TASK_PID_MSG,
+                    &xEngineTask);
+
     vTaskStartScheduler();
 }
 
@@ -159,6 +184,7 @@ void System_Tasks_Init(void){
  ******************************************************************************/
 static void vBNOTask(void *pvParameters)
 {
+  vTaskDelay(120000);
   BNO_Status_t status;
   BNO055Init_TypeDef_t localBNO = {
       .i2cHandler = &hi2c2,
@@ -221,6 +247,7 @@ static void vBNOTask(void *pvParameters)
 static void vMS5837Task(void *pvParameters){
     static MS5837_t localMS5837;
     localMS5837.Delay = My_RTOS_Delay_Func;
+
     if(MS5837_Init(&localMS5837, &hi2c1) != HAL_OK){
             SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
             vTaskDelete(NULL);
@@ -234,37 +261,43 @@ static void vMS5837Task(void *pvParameters){
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(MS5837_READ_PERIOD_MS);
     xLastWakeTime = xTaskGetTickCount();
+
     for(;;){
 
-      // D1 convert
+      // --- D1 (Basınç) Convert Başlat ---
       MS5837_Send_Command_DMA(&localMS5837, cmd_d1);
-      xSemaphoreTake(xMS5837_BinarySem, pdMS_TO_TICKS(10));
-      vTaskDelay(pdMS_TO_TICKS(10));
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY); // DMA TX bittiyse uyan
 
-      //D1 Read
+      vTaskDelay(pdMS_TO_TICKS(20)); // Sensöre hesaplama yapması için 20ms süre ver
+
+      // --- D1 Read Komutu Gönder ---
       MS5837_Send_Command_DMA(&localMS5837, cmd_read);
-      xSemaphoreTake(xMS5837_BinarySem, pdMS_TO_TICKS(10));
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+      // --- D1 Ham Veriyi Oku (RX) ---
       MS5837_Read_ADC_DMA(&localMS5837);
-      // Okuma bitince ISR semaforu verecek
-      if(xSemaphoreTake(xMS5837_BinarySem, pdMS_TO_TICKS(10)) == pdTRUE) {
+
+      if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
           localMS5837.D1_Pres_Raw = MS5837_Parse_ADC(&localMS5837);
       }
 
-      //D2 Convert
+      // --- D2 (Sıcaklık) Convert Başlat ---
       MS5837_Send_Command_DMA(&localMS5837, cmd_d2);
-      xSemaphoreTake(xMS5837_BinarySem, pdMS_TO_TICKS(10));
-      vTaskDelay(pdMS_TO_TICKS(10));
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-      //D2 Read
+      vTaskDelay(pdMS_TO_TICKS(20)); // Hesaplama için 20ms süre ver
+
+      // --- D2 Read Komutu Gönder ---
       MS5837_Send_Command_DMA(&localMS5837, cmd_read);
-      xSemaphoreTake(xMS5837_BinarySem, pdMS_TO_TICKS(10));
+      ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+      // --- D2 Ham Veriyi Oku (RX) ---
       MS5837_Read_ADC_DMA(&localMS5837);
-      if(xSemaphoreTake(xMS5837_BinarySem, pdMS_TO_TICKS(10)) == pdTRUE) {
+      if(ulTaskNotifyTake(pdTRUE, portMAX_DELAY) > 0) {
          localMS5837.D2_Temp_Raw = MS5837_Parse_ADC(&localMS5837);
       }
 
+      // --- Matematik ve Değişken Güncelleme ---
       MS5837_Calculate(&localMS5837);
 
       tx_Depth.depth    = localMS5837.depth;
@@ -272,32 +305,29 @@ static void vMS5837Task(void *pvParameters){
 
       portENTER_CRITICAL();
       lastUpdatedDepth = tx_Depth.depth;
+      lastUpdatedPressure = tx_Depth.pressure;
       portEXIT_CRITICAL();
 
-      //xQueueSend(xQueueDepth, &tx_Depth, 0);
-      //We already waited for 20 seconds during tasks.
       vTaskDelayUntil(&xLastWakeTime , xFrequency);
     }
 }
 
-
-
-
 static void vPitchPidTask(void *pvParameters){
-    MaestroMsg_t msg = {.channel = CH0 ,.target = 0};
+    static MaestroMsg_t msg1;
+    static MaestroMsg_t msg2;
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
     float servo_cmd;
     xLastWakeTime = xTaskGetTickCount();
   for(;;){
-    servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth) + SERVO_CENTER_DEG;
-    msg.channel = 0;
-    msg.target = servo_cmd;
-    xQueueSend(xMaestroCmdQueue, &msg, 0);
+    servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth);
+    msg1.channel = CH0;
+    msg1.target = servo_cmd + SERVO_CENTER_DEG;
+    //xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg.channel = 1;
-    msg.target = servo_cmd;
-    xQueueSend(xMaestroCmdQueue, &msg, 0);
+    msg2.channel = CH1;
+    msg2.target = SERVO_CENTER_DEG - servo_cmd;
+    //xQueueSend(xMaestroCmdQueue, &msg2, 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
@@ -307,20 +337,22 @@ static void vPitchPidTask(void *pvParameters){
 
 
 static void vYawRollPidTask(void *pvParameters){
-  MaestroMsg_t msg;
+  static MaestroMsg_t msg1;
+  static MaestroMsg_t msg2;
+
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
   float servo_cmd;
   xLastWakeTime = xTaskGetTickCount();
   for(;;){
-    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw) + SERVO_CENTER_DEG;
-    msg.channel = 3;
-    msg.target = servo_cmd;
-    xQueueSend(xMaestroCmdQueue, &msg, 0);
+    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
+    msg1.channel = CH3;
+    msg1.target = servo_cmd + SERVO_CENTER_DEG;
+    xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg.channel = 4;
-    msg.target = servo_cmd;
-    xQueueSend(xMaestroCmdQueue, &msg, 0);
+    msg2.channel = CH4;
+    msg2.target = SERVO_CENTER_DEG - servo_cmd;
+    xQueueSend(xMaestroCmdQueue, &msg2, 0);
 
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
@@ -332,31 +364,114 @@ static void vYawRollPidTask(void *pvParameters){
 
 static void vMaestroGatekeeperTask(void *pvParameters) {
     MaestroMsg_t msg;
-    uint8_t command[4];
-    static uint8_t txBuffer[MAX_BATCH_SIZE * CMD_LEN];
+    static uint8_t command[CMD_LEN];
+    TickType_t xLastWakeTime = xTaskGetTickCount();
 
     for(;;) {
-        if (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
-            uint8_t count = 0;
-
-            Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, &txBuffer[count*CMD_LEN]);
-            count ++;
-
-            while (xQueueReceive(xMaestroCmdQueue, &msg, 0) == pdPASS) {
-              vTaskDelay(pdMS_TO_TICKS(1));
-                Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, &txBuffer[count * CMD_LEN]);
-                count++;
-                if (count >= MAX_BATCH_SIZE) {
-                    break;
-                }
+        while (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
+            Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, command);
+            if(ServoDriver.huart->gState == HAL_UART_STATE_READY) {
+                HAL_UART_Transmit_DMA(ServoDriver.huart, command, CMD_LEN);
+                ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
             }
-
-            if(ServoDriver.huart->gState == HAL_UART_STATE_READY){
-              HAL_UART_Transmit_DMA(ServoDriver.huart, txBuffer , count * CMD_LEN);
-            }
-           ulTaskNotifyTake(pdFALSE , portMAX_DELAY);
+            vTaskDelay(2);
         }
     }
+}
+static uint32_t g_CurrentThrottle = 1000;
+static void vEngineTask(void* parameters)
+{
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
+  vTaskDelay(pdMS_TO_TICKS(2000));
+
+  vTaskDelay(pdMS_TO_TICKS(1000));
+  for(;;)
+  {
+    ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
+    for(int i = 0 ; i < 100 ; i++){
+      g_CurrentThrottle += 5;
+      __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
+      vTaskDelay(pdMS_TO_TICKS(20));
+  }
+  vTaskDelay(pdMS_TO_TICKS(17000));
+
+  for(int i = 0 ; i < 100 ; i++){
+        g_CurrentThrottle -= 5;
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
+        vTaskDelay(pdMS_TO_TICKS(1));
+  }
+  }
+}
+
+static void vBLETask(void * parameters)
+{
+  // vTaskDelete(NULL);  <-- BU SATIRI SİLMELİSİN yoksa task başlamadan ölür!
+  static uint8_t command;
+
+  for(;;)
+  {
+    HAL_UART_Receive_DMA(&huart5 , &command , 1);
+    ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+
+    switch (command){
+      // --- SISTEM KONTROL ---
+      case 'A': // ARM / RESUME
+        if(eTaskGetState(xEngineTask) == eSuspended) {
+            vTaskResume(xEngineTask);
+        } else {
+            xTaskNotify(xEngineTask, 0 , eNoAction);
+        }
+        break;
+
+      case 'D': // DISARM / SUSPEND
+        vTaskSuspend(xEngineTask);
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000); // Motoru hemen durdur
+        break;
+
+      // --- YAW PID AYARLARI ---
+      case '1': g_YawPID.Kp += 0.1f; break;
+      case 'Q': g_YawPID.Kp -= 0.1f; break; // Q ile azalt
+
+      case '2': g_YawPID.Kd += 0.1f; break;
+      case 'W': g_YawPID.Kd -= 0.1f; break; // W ile azalt
+
+      case '3': g_YawPID.Ki += 0.1f; break;
+      case 'E': g_YawPID.Ki -= 0.1f; break; // E ile azalt
+
+      // --- PITCH PID AYARLARI ---
+      case '5': g_PitchPID.Kp += 0.1f; break;
+      case 'T': g_PitchPID.Kp -= 0.1f; break; // T ile azalt
+
+      case '6': g_PitchPID.Kd += 0.1f; break;
+      case 'Y': g_PitchPID.Kd -= 0.1f; break; // Y ile azalt
+
+      case '7': g_PitchPID.Ki += 0.1f; break;
+      case 'U': g_PitchPID.Ki -= 0.1f; break; // U ile azalt
+
+      // --- SETPOINT KONTROLLER ---
+      case '4': // Yaw 270 Derece
+        portENTER_CRITICAL();
+        g_YawPID.setpoint = 270.0f;
+        portEXIT_CRITICAL();
+        break;
+
+      case '8': // Pitch Derinlik Hedefi 2.0
+        portENTER_CRITICAL();
+        g_PitchPID.setpoint = 1.0f;
+        portEXIT_CRITICAL();
+        break;
+
+      case '9': // Pitch Sifirla
+        portENTER_CRITICAL();
+        g_PitchPID.setpoint = 0.0f;
+        portEXIT_CRITICAL();
+        break;
+
+      default:
+        break;
+    }
+  }
 }
 
 /*****************************************************************************
@@ -364,10 +479,12 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
  *****************************************************************************/
 void Callback_BNO_DMA_Rx(void)
 {
+  if(xTaskBNO_Read != NULL){
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     vTaskNotifyGiveFromISR(xTaskBNO_Read , &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
+  }
+  }
 
 void Callback_BNO_Error(void)
 {
@@ -408,6 +525,13 @@ void Maestro_CallBack()
 }
 
 
+void BLE_CallBack()
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(xBLETask , &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
 
 // 2. MASTER OKUMA (MS5837 Veri Okuma İçin) - BUNU EKLE!
 
@@ -429,9 +553,9 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c)
  *##################################################################################*/
 void MS5837_DMA_Callback()
 {
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xSemaphoreGiveFromISR(xMS5837_BinarySem , &xHigherPriorityTaskWoken);
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(xTaskMS5837 , &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void MS5837_DMA_Error_Callback(){

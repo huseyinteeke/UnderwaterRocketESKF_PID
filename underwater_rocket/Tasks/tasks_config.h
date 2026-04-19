@@ -25,7 +25,7 @@
 #define TASK_PRIORITY_BNO_READ        (tskIDLE_PRIORITY + 2)
 #define TASK_PID_MSG                  (tskIDLE_PRIORITY + 4)
 
-#define TASK_PRIORITY_YAWROLL_CONTROL     (tskIDLE_PRIORITY + 3)
+#define TASK_PRIORITY_YAWROLL_CONTROL (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_PITCH_CONTROL   (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_MS5837_READ     (tskIDLE_PRIORITY + 2)
 #define TASK_PRIORITY_BT              (tskIDLE_PRIORITY + 4)
@@ -37,13 +37,12 @@
 #define TASK_STACK_YAWROLL_CONTROL      1024
 #define TASK_STACK_PITCH_CONTROL        1024
 #define TASK_STACK_MS5837_READ          1024
-#define TASK_STACK_BT                   1024
-
+#define TASK_STACK_BT                   512
 /**************************************************************************
  * CONTROL FREQUENCIES
  ***************************************************************************/
 #define BNO_READ_RATE_HZ                50      // 50Hz sensor reading
-#define YAW_CONTROL_RATE_HZ             10      // 10Hz yaw control
+#define YAW_CONTROL_RATE_HZ             20      // 10Hz yaw control
 #define PITCH_CONTROL_RATE_HZ           20      // 20Hz pitch control
 #define MS5837_READ_RATE_HZ             20      // 10Hz depth reading
 
