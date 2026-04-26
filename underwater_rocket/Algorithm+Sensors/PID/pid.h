@@ -22,7 +22,6 @@ typedef struct {
     // --- Güvenlik ve Limitler (Safety) ---
     float outputLimit;   // Çıkışın alabileceği max değer (Örn: Servo için 90 derece)
     float integralLimit; // Anti-Windup limiti (I terimi sonsuza gitmesin diye)
-
 } PID_Config_t;
 
 void PID_Init(PID_Config_t* pid, float p, float i, float d, float dt, float outLim);

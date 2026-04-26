@@ -41,10 +41,10 @@
 /**************************************************************************
  * CONTROL FREQUENCIES
  ***************************************************************************/
-#define BNO_READ_RATE_HZ                50      // 50Hz sensor reading
-#define YAW_CONTROL_RATE_HZ             20      // 10Hz yaw control
-#define PITCH_CONTROL_RATE_HZ           20      // 20Hz pitch control
-#define MS5837_READ_RATE_HZ             20      // 10Hz depth reading
+#define BNO_READ_RATE_HZ                30      // 50Hz sensor reading
+#define YAW_CONTROL_RATE_HZ             30      // 10Hz yaw control
+#define PITCH_CONTROL_RATE_HZ           30      // 20Hz pitch control
+#define MS5837_READ_RATE_HZ             30      // 10Hz depth reading
 
 #define BNO_READ_PERIOD_MS          pdMS_TO_TICKS(1000 / BNO_READ_RATE_HZ)
 #define YAW_CONTROL_PERIOD_MS       pdMS_TO_TICKS(1000 / YAW_CONTROL_RATE_HZ)

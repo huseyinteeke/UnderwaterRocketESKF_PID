@@ -42,18 +42,18 @@ static float lastUpdatedRoll;
  */
 
 PID_Config_t g_PitchPID = {
-    .Kp = 3.0f,
-    .Ki = 0.2f,
-    .Kd = 0.2f,
+    .Kp = 12.0f,
+    .Ki = 0.5f,
+    .Kd = 3.0f,
     .dt = 0.1f,
 
-    .setpoint      = 0.0f, // Araç burnunu düz (0 derece) tutsun
+    .setpoint      = 1.0f, // Araç burnunu düz (0 derece) tutsun
     .lastError     = 0.0f, // Başlangıçta 0
     .integralError = 0.0f, // Başlangıçta birikmiş hata 0
 
     // --- Güvenlik ve Limitler ---
     .outputLimit   = 50.0f, // Maestro'ya gidecek max sapma (Açıklamayı oku)
-    .integralLimit = 10.0f  // Anti-Windup limiti (Çıkış limitinin %20'si iyi bir başlangıçtır)
+    .integralLimit = 10.0f,  // Anti-Windup limiti (Çıkış limitinin %20'si iyi bir başlangıçtır)
 };
 
 PID_Config_t g_YawPID = {
@@ -69,7 +69,8 @@ PID_Config_t g_YawPID = {
 
     // --- Güvenlik ve Limitler ---
     .outputLimit   = 50.0f,
-    .integralLimit = 10.0f
+    .integralLimit = 10.0f,
+
 };
 volatile uint8_t g_ARM_STATUS = 0;
 
@@ -184,7 +185,7 @@ void System_Tasks_Init(void){
  ******************************************************************************/
 static void vBNOTask(void *pvParameters)
 {
-  vTaskDelay(120000);
+  vTaskDelay(2000);
   BNO_Status_t status;
   BNO055Init_TypeDef_t localBNO = {
       .i2cHandler = &hi2c2,
@@ -201,44 +202,63 @@ static void vBNOTask(void *pvParameters)
       .gyroUnit  = BNO_GYRO_UNIT_DPS,
       .eulerUnit = BNO_EULER_UNIT_DEG,
       .tempUnit  = BNO_TEMP_UNIT_C,
-      .useStoredCalibration = 0,
-      .calibrationData = {0}
+      .useStoredCalibration = 1,
+      .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
   };
 
+  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
   status = BNO055_Init(&localBNO);
   if(status != BNO_OK)
-      {
-          HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-          vTaskDelete(NULL);
-      }
+  {
+      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+      vTaskDelete(NULL);
+  }
+  portENTER_CRITICAL();
+  PID_Reset(&g_YawPID);
+  portEXIT_CRITICAL();
   BNO055_EulerData_t tmp;
   static uint8_t DMA_rx_buffer[6];
 
-  TickType_t xLastWakeTime;
+  float yawOffset = 0.0f;
+  uint8_t isOffsetSet = 0;
+  uint8_t initCounter = 0;
+
+  TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(BNO_READ_PERIOD_MS);
 
-  //char msg[50];
   for(;;){
-    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler ,
-          localBNO.i2cAddress,
-          BNO055_EUL_HEADING_LSB,
-          1,
-          DMA_rx_buffer,
-          6);
-       ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
-       BNO055_ParseEulerBuffer(&localBNO, DMA_rx_buffer, &tmp);
-       float mapped_heading = 450.0f - tmp.heading;
-       while (mapped_heading >= 360.0f) mapped_heading -= 360.0f;
-       while (mapped_heading < 0.0f)    mapped_heading += 360.0f;
-       portENTER_CRITICAL();
-       lastUpdatedYaw = mapped_heading;
-       lastUpdatedRoll    = tmp.roll;
-       lastUpdatedPitch    = tmp.pitch;
-       portEXIT_CRITICAL();
-       vTaskDelayUntil(&xLastWakeTime , xFrequency);
+    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1, DMA_rx_buffer, 6);
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    BNO055_ParseEulerBuffer(&localBNO, DMA_rx_buffer, &tmp);
 
+    float raw_heading = 450.0f - tmp.heading;
+    while (raw_heading >= 360.0f) raw_heading -= 360.0f;
+    while (raw_heading < 0.0f)    raw_heading += 360.0f;
+
+    if (!isOffsetSet) {
+        if (initCounter < 50) {
+            initCounter++;
+        } else {
+            // Başlangıç açısını 90'a eşitlemek için offset hesabı
+            yawOffset = raw_heading - 90.0f;
+            isOffsetSet = 1;
+        }
+    }
+
+    float finalYaw = raw_heading - yawOffset;
+
+    // 0-360 normalizasyonu
+    while (finalYaw >= 360.0f) finalYaw -= 360.0f;
+    while (finalYaw < 0.0f)    finalYaw += 360.0f;
+
+    portENTER_CRITICAL();
+    lastUpdatedYaw = finalYaw;
+    lastUpdatedRoll = tmp.roll;
+    lastUpdatedPitch = tmp.pitch;
+    portEXIT_CRITICAL();
+
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
-
 }
 
 /********************************************************************************
@@ -323,11 +343,11 @@ static void vPitchPidTask(void *pvParameters){
     servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth);
     msg1.channel = CH0;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
-    //xQueueSend(xMaestroCmdQueue, &msg1, 0);
+    xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
     msg2.channel = CH1;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
-    //xQueueSend(xMaestroCmdQueue, &msg2, 0);
+    xQueueSend(xMaestroCmdQueue, &msg2, 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
@@ -389,14 +409,14 @@ static void vEngineTask(void* parameters)
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 100 ; i++){
+    for(int i = 0 ; i < 130 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
       vTaskDelay(pdMS_TO_TICKS(20));
   }
-  vTaskDelay(pdMS_TO_TICKS(17000));
+  vTaskDelay(pdMS_TO_TICKS(13000));
 
-  for(int i = 0 ; i < 100 ; i++){
+  for(int i = 0 ; i < 130 ; i++){
         g_CurrentThrottle -= 5;
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -406,7 +426,6 @@ static void vEngineTask(void* parameters)
 
 static void vBLETask(void * parameters)
 {
-  // vTaskDelete(NULL);  <-- BU SATIRI SİLMELİSİN yoksa task başlamadan ölür!
   static uint8_t command;
 
   for(;;)
@@ -420,8 +439,11 @@ static void vBLETask(void * parameters)
         if(eTaskGetState(xEngineTask) == eSuspended) {
             vTaskResume(xEngineTask);
         } else {
+          xTaskNotify(xTaskBNO_Read , 0 , eNoAction);
+          vTaskDelay(2000);
             xTaskNotify(xEngineTask, 0 , eNoAction);
         }
+
         break;
 
       case 'D': // DISARM / SUSPEND
@@ -467,7 +489,9 @@ static void vBLETask(void * parameters)
         g_PitchPID.setpoint = 0.0f;
         portEXIT_CRITICAL();
         break;
-
+      case 'R':
+        HAL_NVIC_SystemReset();
+        break;
       default:
         break;
     }

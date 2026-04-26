@@ -26,7 +26,7 @@ void PID_Reset(PID_Config_t* pid) {
 float PID_Calculate(PID_Config_t* pid, float measured_value) {
     float error = pid->setpoint - measured_value;
 
-    // Proportional
+// Proportional
     float P = pid->Kp * error;
 
     // Integral
