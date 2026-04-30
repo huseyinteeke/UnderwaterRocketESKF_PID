@@ -28,7 +28,7 @@
 #define TASK_PRIORITY_YAWROLL_CONTROL (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_PITCH_CONTROL   (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_MS5837_READ     (tskIDLE_PRIORITY + 2)
-#define TASK_PRIORITY_BT              (tskIDLE_PRIORITY + 4)
+#define TASK_PRIORITY_Comm            (tskIDLE_PRIORITY + 4)
 
 /*
  ############TASK STACK SIZES#################################3
@@ -37,7 +37,7 @@
 #define TASK_STACK_YAWROLL_CONTROL      1024
 #define TASK_STACK_PITCH_CONTROL        1024
 #define TASK_STACK_MS5837_READ          1024
-#define TASK_STACK_BT                   512
+#define TASK_STACK_Comm                   512
 /**************************************************************************
  * CONTROL FREQUENCIES
  ***************************************************************************/

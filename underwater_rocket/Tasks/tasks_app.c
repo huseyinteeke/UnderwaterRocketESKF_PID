@@ -24,6 +24,7 @@ extern I2C_HandleTypeDef hi2c2;
 extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
 extern TIM_HandleTypeDef htim2;
+extern UART_HandleTypeDef huart6;
 
 Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
 
@@ -91,7 +92,7 @@ static TaskHandle_t xTaskYawRollControl;
 static TaskHandle_t xTaskPitchControl;
 static TaskHandle_t xTaskMS5837;
 static TaskHandle_t xMaestroGateKeeper;
-static TaskHandle_t xBLETask;
+static TaskHandle_t xCommTask;
 static TaskHandle_t xEngineTask;
 
 /*
@@ -103,7 +104,7 @@ static void vPitchPidTask(void *pvParameters);
 static void vYawRollPidTask(void *pvParameters);
 static void vMS5837Task(void *pvParameters);
 static void vMaestroGatekeeperTask(void* pvParameters);
-static void vBLETask(void * parameters);
+static void vCommTask(void * parameters);
 static void vEngineTask(void* parameters);
 
 /*
@@ -155,12 +156,12 @@ void System_Tasks_Init(void){
                     TASK_PID_MSG,
                     &xMaestroGateKeeper);
 
-       xTaskCreate(vBLETask ,
-                    "BLE task",
-                    TASK_STACK_BT,
+       xTaskCreate(vCommTask ,
+                    "COMM task",
+                    TASK_STACK_Comm,
                     NULL,
-                    TASK_PRIORITY_BT,
-                    &xBLETask
+                    TASK_PRIORITY_Comm,
+                    &xCommTask
         );
 
 
@@ -423,19 +424,19 @@ static void vEngineTask(void* parameters)
   }
   }
 }
+static uint8_t msg[33];
 
-static void vBLETask(void * parameters)
+static void vCommTask(void * parameters)
 {
-  static uint8_t command;
-
+  uint8_t command = 0;
   for(;;)
   {
-    HAL_UART_Receive_DMA(&huart5 , &command , 1);
+    HAL_UART_Receive_DMA(&huart6 , msg , 33);
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+    command = msg[0];
 
     switch (command){
-      // --- SISTEM KONTROL ---
-      case 'A': // ARM / RESUME
+      case 0x01:
         if(eTaskGetState(xEngineTask) == eSuspended) {
             vTaskResume(xEngineTask);
         } else {
@@ -446,51 +447,26 @@ static void vBLETask(void * parameters)
 
         break;
 
-      case 'D': // DISARM / SUSPEND
+      case 0x02: // DISARM / SUSPEND
         vTaskSuspend(xEngineTask);
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000); // Motoru hemen durdur
         break;
 
-      // --- YAW PID AYARLARI ---
-      case '1': g_YawPID.Kp += 0.1f; break;
-      case 'Q': g_YawPID.Kp -= 0.1f; break; // Q ile azalt
-
-      case '2': g_YawPID.Kd += 0.1f; break;
-      case 'W': g_YawPID.Kd -= 0.1f; break; // W ile azalt
-
-      case '3': g_YawPID.Ki += 0.1f; break;
-      case 'E': g_YawPID.Ki -= 0.1f; break; // E ile azalt
-
-      // --- PITCH PID AYARLARI ---
-      case '5': g_PitchPID.Kp += 0.1f; break;
-      case 'T': g_PitchPID.Kp -= 0.1f; break; // T ile azalt
-
-      case '6': g_PitchPID.Kd += 0.1f; break;
-      case 'Y': g_PitchPID.Kd -= 0.1f; break; // Y ile azalt
-
-      case '7': g_PitchPID.Ki += 0.1f; break;
-      case 'U': g_PitchPID.Ki -= 0.1f; break; // U ile azalt
-
-      // --- SETPOINT KONTROLLER ---
-      case '4': // Yaw 270 Derece
-        portENTER_CRITICAL();
-        g_YawPID.setpoint = 270.0f;
-        portEXIT_CRITICAL();
-        break;
-
-      case '8': // Pitch Derinlik Hedefi 2.0
-        portENTER_CRITICAL();
-        g_PitchPID.setpoint = 1.0f;
-        portEXIT_CRITICAL();
-        break;
-
-      case '9': // Pitch Sifirla
-        portENTER_CRITICAL();
-        g_PitchPID.setpoint = 0.0f;
-        portEXIT_CRITICAL();
-        break;
-      case 'R':
+      case 0x03:
         HAL_NVIC_SystemReset();
+        break;
+
+      case 0x04:
+        portENTER_CRITICAL();
+        g_PitchPID.Kp       = *(float*)&msg[1];
+        g_PitchPID.Ki       = *(float*)&msg[5];
+        g_PitchPID.Kd       = *(float*)&msg[9];
+        g_YawPID.Kp         = *(float*)&msg[13];
+        g_YawPID.Ki         = *(float*)&msg[17];
+        g_YawPID.Kd         = *(float*)&msg[21];
+        g_PitchPID.setpoint = *(float*)&msg[25];
+        g_YawPID.setpoint   = *(float*)&msg[29];
+        portEXIT_CRITICAL();
         break;
       default:
         break;
@@ -549,10 +525,10 @@ void Maestro_CallBack()
 }
 
 
-void BLE_CallBack()
+void Comm_CallBack()
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(xBLETask , &xHigherPriorityTaskWoken);
+  vTaskNotifyGiveFromISR(xCommTask , &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
