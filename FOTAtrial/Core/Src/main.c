@@ -387,23 +387,25 @@ void JumpToApplication(void)
 	uint32_t jumpAddress = *(__IO uint32_t*) (APP_ADDRESS + 4);
 	pFunction JumpToApp  = (pFunction) jumpAddress;
 
-	if ((mspAddress & 0x2FFE0000) == 0x20000000)
-	{
+
 		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_RESET);
 		HAL_Delay(100);
-		HAL_UART_DeInit(&huart6);
+		HAL_RCC_DeInit();
 		HAL_DeInit();
 		SysTick->CTRL = 0;
 		SysTick->LOAD = 0;
 		SysTick->VAL = 0;
 
-		__disable_irq();
-		HAL_RCC_DeInit();
+
+		for (int i = 0; i < 8; i++) {
+		        NVIC->ICER[i] = 0xFFFFFFFF;
+		        NVIC->ICPR[i] = 0xFFFFFFFF;
+		}
 
 		SCB->VTOR = APP_ADDRESS;
 		__set_MSP(*(__IO uint32_t*) APP_ADDRESS);
 		JumpToApp();
-	}
+
 }
 
 
