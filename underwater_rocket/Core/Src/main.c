@@ -86,7 +86,8 @@ extern void Callback_BNO_DMA_Rx();
 extern void MS5837_DMA_Callback();
 extern void Maestro_CallBack();
 extern void SEGGER_UART_init(uint32_t);
-extern void Comm_CallBack();
+extern void CommRx_CallBack();
+extern void CommTx_CallBack();
 
 /* USER CODE END PFP */
 
@@ -631,6 +632,11 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
       Maestro_CallBack();
 
     }
+    else if(huart->Instance == huart6.Instance)
+    {
+
+      CommTx_CallBack();
+    }
 
 }
 
@@ -638,7 +644,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
    if(huart->Instance == huart6.Instance)
    {
-     Comm_CallBack();
+     CommRx_CallBack();
    }
 }
 

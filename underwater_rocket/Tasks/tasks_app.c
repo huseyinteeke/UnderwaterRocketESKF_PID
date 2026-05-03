@@ -29,15 +29,25 @@ extern UART_HandleTypeDef huart6;
 Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
 
 
+
+
+
 static float lastUpdatedPressure;
 static float lastUpdatedDepth;
 static float lastUpdatedPitch;
 static float lastUpdatedYaw;
 static float lastUpdatedRoll;
+static float lastUpdatedAccelx;
+static float lastUpdatedAccely;
+static float lastUpdatedAccelz;
+static float lastUpdatedVelocity;
+static float lastUpdatedDistance;
+
 
 /*
  * ************GLOBAL PID VARIABLES******************
  */
+
 /*
  * ************GLOBAL PID VARIABLES******************
  */
@@ -92,9 +102,9 @@ static TaskHandle_t xTaskYawRollControl;
 static TaskHandle_t xTaskPitchControl;
 static TaskHandle_t xTaskMS5837;
 static TaskHandle_t xMaestroGateKeeper;
-static TaskHandle_t xCommTask;
+static TaskHandle_t xCommRxTask;
 static TaskHandle_t xEngineTask;
-
+static TaskHandle_t xCommTxTask;
 /*
  * BT message handle
  */
@@ -104,7 +114,8 @@ static void vPitchPidTask(void *pvParameters);
 static void vYawRollPidTask(void *pvParameters);
 static void vMS5837Task(void *pvParameters);
 static void vMaestroGatekeeperTask(void* pvParameters);
-static void vCommTask(void * parameters);
+static void vCommRxTask(void * parameters);
+static void vCommTxTask(void* parameters);
 static void vEngineTask(void* parameters);
 
 /*
@@ -156,13 +167,23 @@ void System_Tasks_Init(void){
                     TASK_PID_MSG,
                     &xMaestroGateKeeper);
 
-       xTaskCreate(vCommTask ,
-                    "COMM task",
+       xTaskCreate(vCommRxTask ,
+                    "COMM rx task",
                     TASK_STACK_Comm,
                     NULL,
                     TASK_PRIORITY_Comm,
-                    &xCommTask
+                    &xCommRxTask
         );
+
+
+       xTaskCreate(vCommTxTask ,
+                   "COMM tx task",
+                   TASK_STACK_Comm,
+                   NULL,
+                   TASK_PRIORITY_Comm,
+                   &xCommTxTask
+       );
+
 
 
        xTaskCreate(vEngineTask,
@@ -218,7 +239,10 @@ static void vBNOTask(void *pvParameters)
   PID_Reset(&g_YawPID);
   portEXIT_CRITICAL();
   BNO055_EulerData_t tmp;
-  static uint8_t DMA_rx_buffer[6];
+  BNO055_AccelData_t acctmp;
+
+#define BNO_BURST_READ_SIZE  20
+  static uint8_t burst_buffer[BNO_BURST_READ_SIZE];
 
   float yawOffset = 0.0f;
   uint8_t isOffsetSet = 0;
@@ -228,10 +252,10 @@ static void vBNOTask(void *pvParameters)
   const TickType_t xFrequency = pdMS_TO_TICKS(BNO_READ_PERIOD_MS);
 
   for(;;){
-    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1, DMA_rx_buffer, 6);
+    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1 , burst_buffer, BNO_BURST_READ_SIZE);
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    BNO055_ParseEulerBuffer(&localBNO, DMA_rx_buffer, &tmp);
-
+    BNO055_ParseEulerBuffer(&localBNO, &burst_buffer[0] , &tmp);
+    BNO055_ParseAccelBuffer(&localBNO, &burst_buffer[14], &acctmp);
     float raw_heading = 450.0f - tmp.heading;
     while (raw_heading >= 360.0f) raw_heading -= 360.0f;
     while (raw_heading < 0.0f)    raw_heading += 360.0f;
@@ -256,7 +280,11 @@ static void vBNOTask(void *pvParameters)
     lastUpdatedYaw = finalYaw;
     lastUpdatedRoll = tmp.roll;
     lastUpdatedPitch = tmp.pitch;
+    lastUpdatedAccelx = acctmp.acc_x;
+    lastUpdatedAccely = acctmp.acc_y;
+    lastUpdatedAccelz = acctmp.acc_z;
     portEXIT_CRITICAL();
+
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -426,7 +454,7 @@ static void vEngineTask(void* parameters)
 }
 static uint8_t msg[33];
 
-static void vCommTask(void * parameters)
+static void vCommRxTask(void * parameters)
 {
   uint8_t command = 0;
   for(;;)
@@ -437,6 +465,7 @@ static void vCommTask(void * parameters)
 
     switch (command){
       case 0x01:
+        HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
         if(eTaskGetState(xEngineTask) == eSuspended) {
             vTaskResume(xEngineTask);
         } else {
@@ -473,6 +502,44 @@ static void vCommTask(void * parameters)
     }
   }
 }
+
+
+
+
+
+static void vCommTxTask(void* parameters)
+{
+  static TelemetryData_t toSendlist;
+
+  for(;;)
+  {
+
+    toSendlist.timestamp = pdTICKS_TO_MS(xTaskGetTickCount());
+    toSendlist.header    = 0xAABB;
+    toSendlist.footer    = 0xCCDD;
+    portENTER_CRITICAL();
+    toSendlist.depth = lastUpdatedDepth;
+    toSendlist.ax = lastUpdatedAccelx;
+    toSendlist.ay = lastUpdatedAccely;
+    toSendlist.az = lastUpdatedAccelz;
+    toSendlist.pitch = lastUpdatedPitch;
+    toSendlist.roll = lastUpdatedRoll;
+    toSendlist.yaw = lastUpdatedYaw;
+    toSendlist.velocity = lastUpdatedVelocity;
+    toSendlist.distance = lastUpdatedDistance;
+    portEXIT_CRITICAL();
+
+    HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&toSendlist , sizeof(TelemetryData_t));
+    ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+
+
+    vTaskDelay(pdMS_TO_TICKS(50));
+  }
+}
+
+
+
+
 
 /*****************************************************************************
  *****************************BNO DMA HELPERS*********************************
@@ -525,10 +592,18 @@ void Maestro_CallBack()
 }
 
 
-void Comm_CallBack()
+void CommRx_CallBack()
 {
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-  vTaskNotifyGiveFromISR(xCommTask , &xHigherPriorityTaskWoken);
+  vTaskNotifyGiveFromISR(xCommRxTask , &xHigherPriorityTaskWoken);
+  portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}
+
+
+void CommTx_CallBack()
+{
+  BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  vTaskNotifyGiveFromISR(xCommTxTask , &xHigherPriorityTaskWoken);
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 

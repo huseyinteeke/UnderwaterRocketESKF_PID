@@ -77,13 +77,6 @@ typedef struct {
     uint32_t timestamp;
 } PitchData_t;
 
-/* Complete IMU data (for logging/debugging) */
-typedef struct {
-    BNO055_EulerData_t euler;
-    BNO055_AccelData_t accel;
-    BNO055_GyroData_t gyro;
-    uint32_t timestamp;
-} ImuData_t;
 
 /* Depth sensor data */
 typedef struct {
@@ -91,23 +84,7 @@ typedef struct {
     float pressure;     // Prssure data
     uint32_t timestamp;
 } DepthData_t;
-/* Command types */
-typedef enum {
-    CMD_NONE = 0,
-    CMD_ARM,
-    CMD_DISARM,
-    CMD_SET_PID_YAW,
-    CMD_SET_PID_PITCH,
-    CMD_LED
-} CommandType_e;
 
-/* Packed data structure */
-typedef struct {
-    CommandType_e type;  // Command type
-    float val1;          // P~Or values
-    float val2;          // I
-    float val3;          // D
-} ParsedCommand_t;
 
 typedef struct
 {
@@ -115,12 +92,17 @@ typedef struct
   float target;
 }MaestroMsg_t;
 
+typedef struct __attribute((packed))__
+{
+  uint16_t header;
+  uint32_t timestamp;
+  float depth, ax, ay, az, pitch, roll, yaw , velocity , distance;
+  uint16_t footer;
+}TelemetryData_t;
+
 
 //GLOBAL Functions
 void System_Tasks_Init(void);
-void BT_ISR_Data_Handler(char* message);
 
-;
-uint8_t Comm_Get_Parsed_Command(ParsedCommand_t* output_cmd);
 void Comm_Send_Response(const char* msg);
 #endif /* TASKS_CONFIG_H_ */
