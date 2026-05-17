@@ -29,6 +29,7 @@
 #define TASK_PRIORITY_PITCH_CONTROL   (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_MS5837_READ     (tskIDLE_PRIORITY + 2)
 #define TASK_PRIORITY_Comm            (tskIDLE_PRIORITY + 4)
+#define TASK_PRIORITY_VELOCITY        (tskIDLE_PRIORITY + 2)
 
 /*
  ############TASK STACK SIZES#################################3
@@ -37,7 +38,8 @@
 #define TASK_STACK_YAWROLL_CONTROL      1024
 #define TASK_STACK_PITCH_CONTROL        1024
 #define TASK_STACK_MS5837_READ          1024
-#define TASK_STACK_Comm                   512
+#define TASK_STACK_Comm                  512
+#define TASK_STACK_VELOCITY              512
 /**************************************************************************
  * CONTROL FREQUENCIES
  ***************************************************************************/
@@ -45,11 +47,14 @@
 #define YAW_CONTROL_RATE_HZ             30      // 10Hz yaw control
 #define PITCH_CONTROL_RATE_HZ           30      // 20Hz pitch control
 #define MS5837_READ_RATE_HZ             30      // 10Hz depth reading
+#define VELOCITY_RATE_HZ                50
+
 
 #define BNO_READ_PERIOD_MS          pdMS_TO_TICKS(1000 / BNO_READ_RATE_HZ)
 #define YAW_CONTROL_PERIOD_MS       pdMS_TO_TICKS(1000 / YAW_CONTROL_RATE_HZ)
 #define PITCH_CONTROL_PERIOD_MS     pdMS_TO_TICKS(1000 / PITCH_CONTROL_RATE_HZ)
 #define MS5837_READ_PERIOD_MS       pdMS_TO_TICKS(1000 / MS5837_READ_RATE_HZ)
+#define VELOCITY_PERIOD_MS          pdMS_TO_TICKS(1000 / VELOCITY_RATE_HZ)
 
 /*************************************************************************
  * QUEUE SIZES

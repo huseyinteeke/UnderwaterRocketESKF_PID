@@ -53,10 +53,10 @@ static float lastUpdatedDistance;
  */
 
 PID_Config_t g_PitchPID = {
-    .Kp = 12.0f,
+    .Kp = 15.0f,
     .Ki = 0.5f,
-    .Kd = 3.0f,
-    .dt = 0.1f,
+    .Kd = 2.5f,
+    .dt = 0.02f,
 
     .setpoint      = 1.0f, // Araç burnunu düz (0 derece) tutsun
     .lastError     = 0.0f, // Başlangıçta 0
@@ -72,9 +72,9 @@ PID_Config_t g_YawPID = {
     .Kp = 3.0f,
     .Ki = 0.2f,
     .Kd = 0.2f,
-    .dt = 0.1f,
+    .dt = 0.02f,
 
-    .setpoint      = 90.0f,
+    .setpoint      = 270.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
@@ -105,6 +105,7 @@ static TaskHandle_t xMaestroGateKeeper;
 static TaskHandle_t xCommRxTask;
 static TaskHandle_t xEngineTask;
 static TaskHandle_t xCommTxTask;
+static TaskHandle_t xVelocityTask;
 /*
  * BT message handle
  */
@@ -117,6 +118,7 @@ static void vMaestroGatekeeperTask(void* pvParameters);
 static void vCommRxTask(void * parameters);
 static void vCommTxTask(void* parameters);
 static void vEngineTask(void* parameters);
+static void vVelocityTask(void* parameters);
 
 /*
  * ################GLOBAL SYSTEM INIT FUNCTION######################
@@ -193,6 +195,13 @@ void System_Tasks_Init(void){
                     TASK_PID_MSG,
                     &xEngineTask);
 
+       xTaskCreate(vVelocityTask,
+                    "Velocity_ZUPT",
+                    TASK_STACK_VELOCITY,
+                    NULL,
+                    TASK_PRIORITY_VELOCITY,
+                    &xVelocityTask);
+
     vTaskStartScheduler();
 }
 
@@ -207,7 +216,6 @@ void System_Tasks_Init(void){
  ******************************************************************************/
 static void vBNOTask(void *pvParameters)
 {
-  vTaskDelay(2000);
   BNO_Status_t status;
   BNO055Init_TypeDef_t localBNO = {
       .i2cHandler = &hi2c2,
@@ -264,8 +272,7 @@ static void vBNOTask(void *pvParameters)
         if (initCounter < 50) {
             initCounter++;
         } else {
-            // Başlangıç açısını 90'a eşitlemek için offset hesabı
-            yawOffset = raw_heading - 90.0f;
+            yawOffset = raw_heading - 270.0f;
             isOffsetSet = 1;
         }
     }
@@ -275,6 +282,7 @@ static void vBNOTask(void *pvParameters)
     // 0-360 normalizasyonu
     while (finalYaw >= 360.0f) finalYaw -= 360.0f;
     while (finalYaw < 0.0f)    finalYaw += 360.0f;
+
 
     portENTER_CRITICAL();
     lastUpdatedYaw = finalYaw;
@@ -438,11 +446,17 @@ static void vEngineTask(void* parameters)
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 130 ; i++){
+    for(int i = 0 ; i < 110 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
       vTaskDelay(pdMS_TO_TICKS(20));
   }
+  vTaskDelay(pdMS_TO_TICKS(13000));
+
+  portENTER_CRITICAL();
+  g_YawPID.setpoint = 90.0f;
+  portEXIT_CRITICAL();
+
   vTaskDelay(pdMS_TO_TICKS(13000));
 
   for(int i = 0 ; i < 130 ; i++){
@@ -453,6 +467,69 @@ static void vEngineTask(void* parameters)
   }
 }
 static uint8_t msg[33];
+
+/******************************************************************************
+ * **********************VELOCITY / ZUPT TASK**********************************
+ * Runs at 10 Hz.  Reads the latest linear acceleration on the X-axis
+ * (forward axis) published by vBNOTask, integrates to velocity, and resets
+ * velocity to zero whenever acceleration has been below the threshold for
+ * ZUPT_WINDOW_SAMPLES consecutive cycles (~300 ms at 10 Hz).
+ ******************************************************************************/
+static void vVelocityTask(void* parameters)
+{
+    /* ZUPT parameters */
+    const float ZUPT_THRESHOLD   = 0.05f; /* m/s^2 – accel below this = stationary */
+    const int   ZUPT_WIN_SAMPLES = 25;     /* 5 × 100 ms = 500 ms window            */
+    const float dt               = 1.0f / (float)VELOCITY_RATE_HZ; /* 0.1 s */
+    const float LPF_ALPHA        = 0.2f;
+
+
+    int   zupt_count = 0;
+    float velocity   = 0.0f;
+    float distance   = 0.0f;
+
+
+    float filtered_accel   = 0.0f;
+    float prev_filt_accel  = 0.0f;
+
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xPeriod = pdMS_TO_TICKS(1000 / VELOCITY_RATE_HZ);
+
+    for(;;)
+    {
+        /* Grab the latest accel sample published by vBNOTask (Y = forward axis) */
+        portENTER_CRITICAL();
+        float raw_accel = lastUpdatedAccely;
+        portEXIT_CRITICAL();
+
+        filtered_accel = (LPF_ALPHA * raw_accel) + ((1.0f - LPF_ALPHA) * prev_filt_accel);
+        /* ZUPT detection: count consecutive near-zero accel samples */
+        if (filtered_accel > -ZUPT_THRESHOLD && filtered_accel < ZUPT_THRESHOLD) {
+            zupt_count++;
+        } else {
+            zupt_count = 0;
+        }
+
+        /* Integrate or zero depending on ZUPT state */
+        if (zupt_count >= ZUPT_WIN_SAMPLES) {
+            velocity = 0.0f;  /* Zero Velocity Update */
+        } else {
+          velocity += ((filtered_accel + prev_filt_accel) * 0.5f) * dt;
+        }
+
+        /* Integrate velocity to distance */
+        distance += velocity * dt;
+
+        prev_filt_accel = filtered_accel;
+        /* Publish results */
+        portENTER_CRITICAL();
+        lastUpdatedVelocity = velocity;
+        lastUpdatedDistance = distance;
+        portEXIT_CRITICAL();
+
+        vTaskDelayUntil(&xLastWakeTime, xPeriod);
+    }
+}
 
 static void vCommRxTask(void * parameters)
 {
