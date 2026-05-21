@@ -53,17 +53,17 @@ static float lastUpdatedDistance;
  */
 
 PID_Config_t g_PitchPID = {
-    .Kp = 15.0f,
-    .Ki = 0.5f,
-    .Kd = 2.5f,
+    .Kp = 1.0f,
+    .Ki = 0.2f,
+    .Kd = 0.2f,
     .dt = 0.02f,
 
-    .setpoint      = 1.0f, // Araç burnunu düz (0 derece) tutsun
+    .setpoint      = 0.0f, // Araç burnunu düz (0 derece) tutsun
     .lastError     = 0.0f, // Başlangıçta 0
     .integralError = 0.0f, // Başlangıçta birikmiş hata 0
 
     // --- Güvenlik ve Limitler ---
-    .outputLimit   = 50.0f, // Maestro'ya gidecek max sapma (Açıklamayı oku)
+    .outputLimit   = 65.0f, // Maestro'ya gidecek max sapma (Açıklamayı oku)
     .integralLimit = 10.0f,  // Anti-Windup limiti (Çıkış limitinin %20'si iyi bir başlangıçtır)
 };
 
@@ -83,6 +83,25 @@ PID_Config_t g_YawPID = {
     .integralLimit = 10.0f,
 
 };
+
+
+
+PID_Config_t g_DepthPID = {
+    .Kp = 12.0f,
+    .Ki = 0.1f,
+    .Kd = 0.1f,
+    .dt = 0.02f,
+
+    .setpoint      = 1.0f,
+    .lastError     = 0.0f,
+    .integralError = 0.0f,
+
+    .outputLimit   = 65.0f,
+    .integralLimit = 20.0f,
+
+};
+
+
 volatile uint8_t g_ARM_STATUS = 0;
 
 
@@ -375,14 +394,26 @@ static void vPitchPidTask(void *pvParameters){
     TickType_t xLastWakeTime;
     const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
     float servo_cmd;
+    float current_pitch;
+    float current_depth;
+    float desired_pitch;
+
+
     xLastWakeTime = xTaskGetTickCount();
   for(;;){
-    servo_cmd = PID_Calculate(&g_PitchPID , lastUpdatedDepth);
-    msg1.channel = CH0;
+
+    portENTER_CRITICAL();
+    current_pitch = lastUpdatedPitch;
+    current_depth = lastUpdatedDepth;
+    portEXIT_CRITICAL();
+
+    servo_cmd = PID_Calculate(&g_DepthPID , current_depth);
+
+    msg1.channel = CH3;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH1;
+    msg2.channel = CH4;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
@@ -403,11 +434,11 @@ static void vYawRollPidTask(void *pvParameters){
   xLastWakeTime = xTaskGetTickCount();
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
-    msg1.channel = CH3;
+    msg1.channel = CH1;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH4;
+    msg2.channel = CH0;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
 
@@ -446,20 +477,20 @@ static void vEngineTask(void* parameters)
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 110 ; i++){
+    for(int i = 0 ; i < 140 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
       vTaskDelay(pdMS_TO_TICKS(20));
   }
   vTaskDelay(pdMS_TO_TICKS(13000));
 
-  portENTER_CRITICAL();
-  g_YawPID.setpoint = 90.0f;
-  portEXIT_CRITICAL();
+  //portENTER_CRITICAL();
+  //g_YawPID.setpoint = 90.0f;
+  //portEXIT_CRITICAL();
 
-  vTaskDelay(pdMS_TO_TICKS(13000));
+  //vTaskDelay(pdMS_TO_TICKS(13000));
 
-  for(int i = 0 ; i < 130 ; i++){
+  for(int i = 0 ; i < 140 ; i++){
         g_CurrentThrottle -= 5;
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
         vTaskDelay(pdMS_TO_TICKS(1));
@@ -564,13 +595,13 @@ static void vCommRxTask(void * parameters)
 
       case 0x04:
         portENTER_CRITICAL();
-        g_PitchPID.Kp       = *(float*)&msg[1];
-        g_PitchPID.Ki       = *(float*)&msg[5];
-        g_PitchPID.Kd       = *(float*)&msg[9];
+        g_DepthPID.Kp       = *(float*)&msg[1];
+        g_DepthPID.Ki       = *(float*)&msg[5];
+        g_DepthPID.Kd       = *(float*)&msg[9];
         g_YawPID.Kp         = *(float*)&msg[13];
         g_YawPID.Ki         = *(float*)&msg[17];
         g_YawPID.Kd         = *(float*)&msg[21];
-        g_PitchPID.setpoint = *(float*)&msg[25];
+        g_DepthPID.setpoint = *(float*)&msg[25];
         g_YawPID.setpoint   = *(float*)&msg[29];
         portEXIT_CRITICAL();
         break;
