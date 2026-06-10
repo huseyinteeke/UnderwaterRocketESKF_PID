@@ -54,7 +54,7 @@ static float lastUpdatedDistance;
 
 PID_Config_t g_PitchPID = {
     .Kp = 1.0f,
-    .Ki = 0.2f,
+    .Ki = 0.5f,
     .Kd = 0.2f,
     .dt = 0.02f,
 
@@ -69,7 +69,7 @@ PID_Config_t g_PitchPID = {
 
 PID_Config_t g_YawPID = {
     // --- Ayarlanabilir Katsayılar ---
-    .Kp = 3.0f,
+    .Kp = 2.0f,
     .Ki = 0.2f,
     .Kd = 0.2f,
     .dt = 0.02f,
@@ -79,7 +79,7 @@ PID_Config_t g_YawPID = {
     .integralError = 0.0f,
 
     // --- Güvenlik ve Limitler ---
-    .outputLimit   = 50.0f,
+    .outputLimit   = 40.0f,
     .integralLimit = 10.0f,
 
 };
@@ -87,20 +87,37 @@ PID_Config_t g_YawPID = {
 
 
 PID_Config_t g_DepthPID = {
-    .Kp = 12.0f,
-    .Ki = 0.1f,
-    .Kd = 0.1f,
+    .Kp = 15.0f,
+    .Ki = 3.0f,
+    .Kd = 1.0f,
     .dt = 0.02f,
 
-    .setpoint      = 1.0f,
+    .setpoint      = 0.5f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 65.0f,
+    .outputLimit   = 30.0f,
     .integralLimit = 20.0f,
 
 };
 
+
+
+
+PID_Config_t g_RollPID = {
+    .Kp = 3.0f,
+    .Ki = 0.1f,
+    .Kd = 0.1f,
+    .dt = 0.02f,
+
+    .setpoint      = 0.0f,
+    .lastError     = 0.0f,
+    .integralError = 0.0f,
+
+    .outputLimit   = 50.0f,
+    .integralLimit = 20.0f,
+
+};
 
 volatile uint8_t g_ARM_STATUS = 0;
 
@@ -246,7 +263,7 @@ static void vBNOTask(void *pvParameters)
       .powerMode     = BNO_PWR_MODE_NORMAL,
       .operationMode = BNO_MODE_NDOF,
       .externalCrystal = 0,
-      .axisRemap = BNO_AXIS_REMAP_P0,
+      .axisRemap = BNO_AXIS_REMAP_P1,
       .accelUnit = BNO_ACC_UNIT_MS2,
       .gyroUnit  = BNO_GYRO_UNIT_DPS,
       .eulerUnit = BNO_EULER_UNIT_DEG,
@@ -397,7 +414,7 @@ static void vPitchPidTask(void *pvParameters){
     float current_pitch;
     float current_depth;
     float desired_pitch;
-
+    float roll_cmd;
 
     xLastWakeTime = xTaskGetTickCount();
   for(;;){
@@ -407,13 +424,15 @@ static void vPitchPidTask(void *pvParameters){
     current_depth = lastUpdatedDepth;
     portEXIT_CRITICAL();
 
+    roll_cmd  = PID_Calculate(&g_RollPID, lastUpdatedRoll);
     servo_cmd = PID_Calculate(&g_DepthPID , current_depth);
 
-    msg1.channel = CH3;
+
+    msg1.channel = CH1;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH4;
+    msg2.channel = CH0;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
@@ -434,11 +453,12 @@ static void vYawRollPidTask(void *pvParameters){
   xLastWakeTime = xTaskGetTickCount();
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
-    msg1.channel = CH1;
+
+    msg1.channel = CH3;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH0;
+    msg2.channel = CH4;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
 
