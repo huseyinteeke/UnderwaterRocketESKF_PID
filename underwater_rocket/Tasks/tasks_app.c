@@ -53,9 +53,9 @@ static float lastUpdatedDistance;
  */
 
 PID_Config_t g_YawPID = {
-    .Kp = 2.0f,
+    .Kp = 3.0f,
     .Ki = 0.0f,
-    .Kd = 0.01f,
+    .Kd = 0.02f,
     .dt = 0.02f,
 
     .setpoint      = 270.0f,
@@ -79,7 +79,7 @@ PID_Config_t g_DepthPID = {
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 7.5f,
+    .outputLimit   = 20.0f,
     .integralLimit = 20.0f,
 
 };
@@ -391,7 +391,7 @@ static void vPitchPidTask(void *pvParameters){
     current_depth = lastUpdatedDepth;
     portEXIT_CRITICAL();
 
-    roll_cmd  = PID_Calculate(&g_RollPID, lastUpdatedRoll);
+    //roll_cmd  = PID_Calculate(&g_RollPID, lastUpdatedRoll);
     servo_cmd = PID_Calculate(&g_DepthPID , current_depth);
 
 
@@ -413,6 +413,8 @@ static void vPitchPidTask(void *pvParameters){
 static void vYawRollPidTask(void *pvParameters){
   static MaestroMsg_t msg1;
   static MaestroMsg_t msg2;
+
+
 
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
@@ -628,7 +630,7 @@ static void vCommTxTask(void* parameters)
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
 
 
-    vTaskDelay(pdMS_TO_TICKS(50));
+    vTaskDelay(pdMS_TO_TICKS(100));
   }
 }
 

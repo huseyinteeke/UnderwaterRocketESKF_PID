@@ -72,21 +72,11 @@ void Maestro_SetSpeed(Maestro_Handler_t *dev , MaestroChannel_TypeDef_t channels
 	//set speed function
 
   command[0] = MAESTRO_CMD_SET_SPEED;
-  command[1] = 0; //applied to all channel after
+  command[1] = channels;
   command[2] = dev->speed & 0x7F;
   command[3] = (dev->speed >> 7) & 0x7F;
 
-
-
-
-	for (uint8_t ch = 0; ch < MAESTRO_MAX_CHANNEL; ch++) {
-
-		if((channels) & (1 << ch)){
-
-		command[1] = ch;
-		}
-	   }
-	  }
+}
 
 
 
