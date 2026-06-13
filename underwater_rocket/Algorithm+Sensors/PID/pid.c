@@ -41,10 +41,11 @@ float PID_Calculate(PID_Config_t* pid, float measured_value) {
     float I = pid->Ki * pid->integralError;
 
     // Derivative
-    float derivative = (error - pid->lastError) / pid->dt;
+    float derivative = -(measured_value - pid->lastError) / pid->dt;
     float D = pid->Kd * derivative;
 
-    pid->lastError = error;
+    // Bir sonraki döngü için mevcut ölçülen değeri kaydet
+    pid->lastError = measured_value;
 
     // Output Clamping
     float output = P + I + D;

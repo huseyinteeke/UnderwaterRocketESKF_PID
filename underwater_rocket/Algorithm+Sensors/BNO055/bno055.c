@@ -322,7 +322,7 @@ BNO_Status_t BNO055_ReadQuaternion_DMA(BNO055Init_TypeDef_t *dev, uint8_t *buffe
           BNO055_QUA_DATAW_LSB,
            1,
            buffer,
-           6) == HAL_OK) ? BNO_OK : BNO_I2C_ERROR;
+           8) == HAL_OK) ? BNO_OK : BNO_I2C_ERROR;
 }
 //************PARSE DATA FUNCTIONS**************************//
 
@@ -377,3 +377,22 @@ void BNO055_ParseGyroBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer,
 
    }
 }
+
+
+
+
+void BNO055_ParseQuatBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BNO055_QuatData_t *data)
+{
+    int16_t w_raw = (int16_t)((buffer[1] << 8) | buffer[0]);
+     int16_t x_raw = (int16_t)((buffer[3] << 8) | buffer[2]);
+     int16_t y_raw = (int16_t)((buffer[5] << 8) | buffer[4]);
+     int16_t z_raw = (int16_t)((buffer[7] << 8) | buffer[6]);
+
+
+     data->quat_w = w_raw / 16384.0f;
+      data->quat_x = x_raw / 16384.0f;
+      data->quat_y = y_raw / 16384.0f;
+      data->quat_z = z_raw / 16384.0f;
+
+}
+

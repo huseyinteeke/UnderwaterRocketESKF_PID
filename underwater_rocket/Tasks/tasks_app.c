@@ -52,33 +52,16 @@ static float lastUpdatedDistance;
  * ************GLOBAL PID VARIABLES******************
  */
 
-PID_Config_t g_PitchPID = {
-    .Kp = 1.0f,
-    .Ki = 0.5f,
-    .Kd = 0.2f,
-    .dt = 0.02f,
-
-    .setpoint      = 0.0f, // Araç burnunu düz (0 derece) tutsun
-    .lastError     = 0.0f, // Başlangıçta 0
-    .integralError = 0.0f, // Başlangıçta birikmiş hata 0
-
-    // --- Güvenlik ve Limitler ---
-    .outputLimit   = 65.0f, // Maestro'ya gidecek max sapma (Açıklamayı oku)
-    .integralLimit = 10.0f,  // Anti-Windup limiti (Çıkış limitinin %20'si iyi bir başlangıçtır)
-};
-
 PID_Config_t g_YawPID = {
-    // --- Ayarlanabilir Katsayılar ---
     .Kp = 2.0f,
-    .Ki = 0.2f,
-    .Kd = 0.2f,
+    .Ki = 0.0f,
+    .Kd = 0.01f,
     .dt = 0.02f,
 
     .setpoint      = 270.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    // --- Güvenlik ve Limitler ---
     .outputLimit   = 40.0f,
     .integralLimit = 10.0f,
 
@@ -87,34 +70,16 @@ PID_Config_t g_YawPID = {
 
 
 PID_Config_t g_DepthPID = {
-    .Kp = 15.0f,
-    .Ki = 3.0f,
-    .Kd = 1.0f,
-    .dt = 0.02f,
+    .Kp = 80.0f,
+    .Ki = 0.0f,
+    .Kd = 4.0f,
+    .dt = 0.05f,
 
-    .setpoint      = 0.5f,
+    .setpoint      = 1.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 30.0f,
-    .integralLimit = 20.0f,
-
-};
-
-
-
-
-PID_Config_t g_RollPID = {
-    .Kp = 3.0f,
-    .Ki = 0.1f,
-    .Kd = 0.1f,
-    .dt = 0.02f,
-
-    .setpoint      = 0.0f,
-    .lastError     = 0.0f,
-    .integralError = 0.0f,
-
-    .outputLimit   = 50.0f,
+    .outputLimit   = 7.5f,
     .integralLimit = 20.0f,
 
 };
@@ -274,6 +239,8 @@ static void vBNOTask(void *pvParameters)
 
   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
   status = BNO055_Init(&localBNO);
+
+
   if(status != BNO_OK)
   {
       HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
@@ -428,11 +395,11 @@ static void vPitchPidTask(void *pvParameters){
     servo_cmd = PID_Calculate(&g_DepthPID , current_depth);
 
 
-    msg1.channel = CH1;
+    msg1.channel = CH3;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH0;
+    msg2.channel = CH4;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
@@ -454,11 +421,11 @@ static void vYawRollPidTask(void *pvParameters){
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
 
-    msg1.channel = CH3;
+    msg1.channel = CH1;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH4;
+    msg2.channel = CH0;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
 
@@ -595,11 +562,11 @@ static void vCommRxTask(void * parameters)
       case 0x01:
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
         if(eTaskGetState(xEngineTask) == eSuspended) {
-            vTaskResume(xEngineTask);
+           vTaskResume(xEngineTask);
         } else {
           xTaskNotify(xTaskBNO_Read , 0 , eNoAction);
           vTaskDelay(2000);
-            xTaskNotify(xEngineTask, 0 , eNoAction);
+          xTaskNotify(xEngineTask, 0 , eNoAction);
         }
 
         break;
