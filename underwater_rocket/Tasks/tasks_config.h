@@ -106,8 +106,9 @@ typedef struct __attribute((packed))__
 }TelemetryData_t;
 
 
+extern volatile uint8_t g_IMU_OK;
+
 //GLOBAL Functions
 void System_Tasks_Init(void);
-
 void Comm_Send_Response(const char* msg);
 #endif /* TASKS_CONFIG_H_ */

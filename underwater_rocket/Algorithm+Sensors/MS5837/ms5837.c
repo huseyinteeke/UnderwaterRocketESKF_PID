@@ -142,9 +142,6 @@ uint32_t MS5837_Parse_ADC(MS5837_t *dev)
 }
 
 
-/*
- * We need raw tmp and raw press , don't forget to call them in the task function
- */
 void MS5837_Calculate(MS5837_t *dev){
     int32_t dT          = (int32_t)dev->D2_Temp_Raw - ((int32_t)(dev->C[5] << 8));
     int32_t TEMP        = 2000 + (int32_t)(dT*dev->C[6] >> 23);
@@ -152,8 +149,8 @@ void MS5837_Calculate(MS5837_t *dev){
     int64_t SENS        = (dev->C[1] << 15) + ((dev->C[3]*dT) >> 8);
     int64_t pressure    = (((((int64_t)dev->D1_Pres_Raw * SENS) >> 21) - OFF) >> 13);
 
-    dev->P    = (int32_t)pressure;  //mbar * 10
-    dev->TEMP = TEMP;               //degree * 100
+    dev->P    = (int32_t)pressure;  // mbar * 10
+    dev->TEMP = TEMP;               // degree * 100
 
     if(dev->surface_pressure == 0) {
             dev->surface_pressure = dev->P;
@@ -162,17 +159,10 @@ void MS5837_Calculate(MS5837_t *dev){
   float delta_P_raw = (float)(dev->P - dev->surface_pressure);
 
   if (delta_P_raw <= 0.0f) {
-      dev->depth = 0.0f; // Basınç yüzeyden düşük veya eşitse havadayız (0 metre)
+      dev->depth = 0.0f;
   } else {
-      // GERÇEK FİZİK HESABI:
-      // delta_P_raw değeri (mbar * 10) cinsindendir.
-      // Bunu Pascal (Pa) birimine çevirmek için 10 ile çarpmamız gerekir (1 mbar = 100 Pa).
-      // Formül: Derinlik (m) = Basınç(Pa) / (Yoğunluk * Yerçekimi)
-
-      float density = 997.0f;     // Tatlı su (havuz/şişe) için 997, Deniz (Teknofest) için 1029 yap
-      float gravity = 9.80665f;   // Yerçekimi ivmesi
-
-      // Sonuç doğrudan METRE cinsinden dev->depth değişkenine yazılır (Örn: 0.20 metre)
+      float density = 997.0f;     // Fresh water: 997, Sea water: 1029
+      float gravity = 9.80665f;
       dev->depth = (delta_P_raw * 10.0f) / (density * gravity);
   }
 }

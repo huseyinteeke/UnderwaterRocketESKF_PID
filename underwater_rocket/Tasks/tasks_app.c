@@ -466,7 +466,7 @@ static void vEngineTask(void* parameters)
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 140 ; i++){
+    for(int i = 0 ; i < 80 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
       vTaskDelay(pdMS_TO_TICKS(20));
@@ -479,7 +479,7 @@ static void vEngineTask(void* parameters)
 
   //vTaskDelay(pdMS_TO_TICKS(13000));
 
-  for(int i = 0 ; i < 140 ; i++){
+  for(int i = 0 ; i < 80 ; i++){
         g_CurrentThrottle -= 5;
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
         vTaskDelay(pdMS_TO_TICKS(1));

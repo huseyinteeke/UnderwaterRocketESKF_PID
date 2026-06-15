@@ -13,7 +13,7 @@ void PID_Init(PID_Config_t* pid, float p, float i, float d, float dt, float outL
     pid->Ki = i;
     pid->Kd = d;
     pid->dt = dt;
-    pid->integralLimit = outLim; // Genelde integral limiti output limitiyle ilişkilidir
+    pid->integralLimit = outLim;
     pid->outputLimit = outLim;
     PID_Reset(pid);
 }
@@ -26,13 +26,10 @@ void PID_Reset(PID_Config_t* pid) {
 float PID_Calculate(PID_Config_t* pid, float measured_value) {
     float error = pid->setpoint - measured_value;
 
-// Proportional
     float P = pid->Kp * error;
 
-    // Integral
     pid->integralError += error * pid->dt;
 
-    // Anti-windup (Integral Sınırlandırma)
     if (pid->integralError > pid->integralLimit) {
         pid->integralError = pid->integralLimit;
     } else if (pid->integralError < -pid->integralLimit) {
@@ -40,14 +37,42 @@ float PID_Calculate(PID_Config_t* pid, float measured_value) {
     }
     float I = pid->Ki * pid->integralError;
 
-    // Derivative
     float derivative = -(measured_value - pid->lastError) / pid->dt;
     float D = pid->Kd * derivative;
 
-    // Bir sonraki döngü için mevcut ölçülen değeri kaydet
     pid->lastError = measured_value;
 
-    // Output Clamping
+    float output = P + I + D;
+    if (output > pid->outputLimit) output = pid->outputLimit;
+    else if (output < -pid->outputLimit) output = -pid->outputLimit;
+
+    return output;
+}
+
+float PID_Calculate_Angle(PID_Config_t* pid, float measured_value) {
+    float error = pid->setpoint - measured_value;
+    while (error > 180.0f) error -= 360.0f;
+    while (error < -180.0f) error += 360.0f;
+
+    float P = pid->Kp * error;
+
+    pid->integralError += error * pid->dt;
+
+    if (pid->integralError > pid->integralLimit) {
+        pid->integralError = pid->integralLimit;
+    } else if (pid->integralError < -pid->integralLimit) {
+        pid->integralError = -pid->integralLimit;
+    }
+    float I = pid->Ki * pid->integralError;
+
+    float diff = measured_value - pid->lastError;
+    while (diff > 180.0f) diff -= 360.0f;
+    while (diff < -180.0f) diff += 360.0f;
+    float derivative = -diff / pid->dt;
+    float D = pid->Kd * derivative;
+
+    pid->lastError = measured_value;
+
     float output = P + I + D;
     if (output > pid->outputLimit) output = pid->outputLimit;
     else if (output < -pid->outputLimit) output = -pid->outputLimit;
