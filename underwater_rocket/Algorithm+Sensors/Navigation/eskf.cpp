@@ -21,19 +21,15 @@ void SubESKF_Init(void) {
     P(2, 0) = 0.0f;  P(2, 1) = 0.0f;  P(2, 2) = 1.0f; // Bias belirsizliği
 
     // 2. Q Matrisi: Sistem / Süreç Gürültüsü
-    // Dinamik modelimizin (CFD ve İtki denklemleri) doğasına ait belirsizlik.
-    // PWM veya hidrodinamik parametrelerdeki hata payını temsil eder.
     Matrix<3, 3> Q;
     Q(0, 0) = 0.01f; Q(0, 1) = 0.0f;  Q(0, 2) = 0.0f;  // Konum gürültüsü
     Q(1, 0) = 0.0f;  Q(1, 1) = 0.05f; Q(1, 2) = 0.0f;  // Hız gürültüsü
-    Q(2, 0) = 0.0f;  Q(2, 1) = 0.0f;  Q(2, 2) = 0.001f; // Bias rastgele yürüyüş hızı (Çok düşük olmalı)
+    Q(2, 0) = 0.0f;  Q(2, 1) = 0.0f;  Q(2, 2) = 0.001f;
 
     // 3. R Matrisi: Ölçüm Gürültüsü
     // İvmeölçerin veri kağıdında (datasheet) yazan gürültü yoğunluğu veya test edilerek bulunan varyans değeri.
     Matrix<1, 1> R;
-    R(0, 0) = 0.1f; // Sensör çok titriyorsa (örn: motor titreşimi) bu değeri büyütmelisin.
-
-    // Filtreyi başlat ve matrisleri yükle
+    R(0, 0) = 0.1f;
     mySubESKF.Init();
     mySubESKF.setP(P);
     mySubESKF.setQ(Q);

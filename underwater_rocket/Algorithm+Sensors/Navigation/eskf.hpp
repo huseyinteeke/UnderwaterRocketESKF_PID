@@ -126,7 +126,9 @@ private:
     // PWM sinyalini Newton cinsinden itki kuvvetine çevirir
     float CalculateThrust(float pwm) {
         if (pwm < 1000.0f) return 0.0f;
-        float thrust = (C2 * pwm * pwm) + (C1 * pwm) + C0;
+        if (pwm > 2000.0f) pwm = 2000.0f;
+        float u = (pwm - 1000.0f) / 1000.0f;
+        float thrust = (C2 * u * u) + (C1 * u) + C0;
         return (thrust > 0.0f) ? thrust : 0.0f;
     }
 

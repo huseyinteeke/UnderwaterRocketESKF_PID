@@ -42,6 +42,7 @@ static float lastUpdatedAccely;
 static float lastUpdatedAccelz;
 static float lastUpdatedVelocity;
 static float lastUpdatedDistance;
+static float lastUpdatedPWM;
 
 
 /*
@@ -109,6 +110,7 @@ volatile uint8_t g_ARM_STATUS = 0;
 /* Queue Handles */
 
 static QueueHandle_t xMaestroCmdQueue;
+static SemaphoreHandle_t xEskfMutex;
 /* Semaphore Handles */
 static SemaphoreHandle_t xMS5837_BinarySem;   // NS5837 DMA complete signal
 /* Task Handles */
@@ -121,10 +123,9 @@ static TaskHandle_t xMaestroGateKeeper;
 static TaskHandle_t xCommRxTask;
 static TaskHandle_t xEngineTask;
 static TaskHandle_t xCommTxTask;
-static TaskHandle_t xVelocityTask;
-/*
- * BT message handle
- */
+static TaskHandle_t xEskfPredictTask;
+static TaskHandle_t xEskfUpdateTask;
+
 
 static void vBNOTask(void *pvParameters);
 
@@ -137,7 +138,10 @@ static void vMaestroGatekeeperTask(void* pvParameters);
 static void vCommRxTask(void * parameters);
 static void vCommTxTask(void* parameters);
 static void vEngineTask(void* parameters);
-static void vVelocityTask(void* parameters);
+static void vEskfPredictTask(void* parameters);
+static void vEskfUpdateTask(void* parameters);
+
+
 
 /*
  * ################GLOBAL SYSTEM INIT FUNCTION######################
@@ -147,7 +151,7 @@ void System_Tasks_Init(void){
 
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
     xMaestroCmdQueue    = xQueueCreate(10 , sizeof(MaestroMsg_t));
-
+    xEskfMutex = xSemaphoreCreateMutex();
 
 
     xTaskCreate(vBNOTask ,
@@ -221,17 +225,83 @@ void System_Tasks_Init(void){
                     TASK_PID_MSG,
                     &xEngineTask);
 
-       xTaskCreate(vVelocityTask,
-                    "Velocity_ZUPT",
-                    TASK_STACK_VELOCITY,
-                    NULL,
-                    TASK_PRIORITY_VELOCITY,
-                    &xVelocityTask);
+
+       xTaskCreate(vEskfPredictTask ,
+                   "ESKF Predict",
+                   TASK_STACK_ESKF,
+                   NULL,
+                   TASK_PRIORITY_ESKF,
+                   &xEskfPredictTask
+       );
+
+       xTaskCreate(vEskfUpdateTask ,
+                          "ESKF update",
+                          TASK_STACK_ESKF,
+                          NULL,
+                          TASK_PRIORITY_ESKF,
+                          &xEskfUpdateTask
+              );
+
+       SubESKF_Init();
 
     vTaskStartScheduler();
 }
 
 
+
+static void vEskfPredictTask(void* parameters)
+{
+  TickType_t xLastWakeTime = xTaskGetTickCount();
+  const TickType_t xFrequency = pdMS_TO_TICKS(10);
+  const float dt = 0.01f;
+  float currentpwm;
+
+  for(;;)
+  {
+
+    portENTER_CRITICAL();
+    currentpwm = lastUpdatedPWM;
+    portEXIT_CRITICAL();
+
+    if (xSemaphoreTake(xEskfMutex, portMAX_DELAY) == pdTRUE) {
+        SubESKF_Predict(currentpwm, dt);
+        xSemaphoreGive(xEskfMutex);
+    }
+
+
+    vTaskDelayUntil(&xLastWakeTime, xFrequency);
+  }
+
+}
+
+
+
+
+
+
+
+static void vEskfUpdateTask(void* parameters)
+{
+  static float accel_x;
+  static float current_pwm;
+
+  for(;;)
+  {
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+
+    portENTER_CRITICAL();
+    accel_x = lastUpdatedAccelx;
+    current_pwm = lastUpdatedPWM;
+    portEXIT_CRITICAL();
+
+    if (xSemaphoreTake(xEskfMutex, portMAX_DELAY) == pdTRUE) {
+          SubESKF_UpdateIMU(accel_x, current_pwm);
+          xSemaphoreGive(xEskfMutex);
+      }
+  }
+
+}
 
 
 
@@ -321,6 +391,11 @@ static void vBNOTask(void *pvParameters)
     lastUpdatedAccelz = acctmp.acc_z;
     portEXIT_CRITICAL();
 
+
+    if(xEskfUpdateTask != NULL)
+    {
+      xTaskNotifyGive(xEskfUpdateTask);
+    }
 
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -500,9 +575,16 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
 
 static uint32_t g_CurrentThrottle = 1000;
 static void vEngineTask(void* parameters)
+
+
+
+
 {
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
+  portENTER_CRITICAL();
+    lastUpdatedPWM = 1000.0f;
+    portEXIT_CRITICAL();
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   vTaskDelay(pdMS_TO_TICKS(1000));
@@ -512,88 +594,29 @@ static void vEngineTask(void* parameters)
     for(int i = 0 ; i < 80 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
+
+      portENTER_CRITICAL();
+      lastUpdatedPWM = (float)g_CurrentThrottle;
+      portEXIT_CRITICAL();
+
       vTaskDelay(pdMS_TO_TICKS(20));
   }
   vTaskDelay(pdMS_TO_TICKS(13000));
-
-  //portENTER_CRITICAL();
-  //g_YawPID.setpoint = 90.0f;
-  //portEXIT_CRITICAL();
-
-  //vTaskDelay(pdMS_TO_TICKS(13000));
-
   for(int i = 0 ; i < 80 ; i++){
         g_CurrentThrottle -= 5;
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
+        portENTER_CRITICAL();
+        lastUpdatedPWM = (float)g_CurrentThrottle;
+        portEXIT_CRITICAL();
         vTaskDelay(pdMS_TO_TICKS(1));
   }
   }
 }
+
+
+
+
 static uint8_t msg[33];
-
-/******************************************************************************
- * **********************VELOCITY / ZUPT TASK**********************************
- * Runs at 10 Hz.  Reads the latest linear acceleration on the X-axis
- * (forward axis) published by vBNOTask, integrates to velocity, and resets
- * velocity to zero whenever acceleration has been below the threshold for
- * ZUPT_WINDOW_SAMPLES consecutive cycles (~300 ms at 10 Hz).
- ******************************************************************************/
-static void vVelocityTask(void* parameters)
-{
-    /* ZUPT parameters */
-    const float ZUPT_THRESHOLD   = 0.05f; /* m/s^2 – accel below this = stationary */
-    const int   ZUPT_WIN_SAMPLES = 25;     /* 5 × 100 ms = 500 ms window            */
-    const float dt               = 1.0f / (float)VELOCITY_RATE_HZ; /* 0.1 s */
-    const float LPF_ALPHA        = 0.2f;
-
-
-    int   zupt_count = 0;
-    float velocity   = 0.0f;
-    float distance   = 0.0f;
-
-
-    float filtered_accel   = 0.0f;
-    float prev_filt_accel  = 0.0f;
-
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xPeriod = pdMS_TO_TICKS(1000 / VELOCITY_RATE_HZ);
-
-    for(;;)
-    {
-        /* Grab the latest accel sample published by vBNOTask (Y = forward axis) */
-        portENTER_CRITICAL();
-        float raw_accel = lastUpdatedAccely;
-        portEXIT_CRITICAL();
-
-        filtered_accel = (LPF_ALPHA * raw_accel) + ((1.0f - LPF_ALPHA) * prev_filt_accel);
-        /* ZUPT detection: count consecutive near-zero accel samples */
-        if (filtered_accel > -ZUPT_THRESHOLD && filtered_accel < ZUPT_THRESHOLD) {
-            zupt_count++;
-        } else {
-            zupt_count = 0;
-        }
-
-        /* Integrate or zero depending on ZUPT state */
-        if (zupt_count >= ZUPT_WIN_SAMPLES) {
-            velocity = 0.0f;  /* Zero Velocity Update */
-        } else {
-          velocity += ((filtered_accel + prev_filt_accel) * 0.5f) * dt;
-        }
-
-        /* Integrate velocity to distance */
-        distance += velocity * dt;
-
-        prev_filt_accel = filtered_accel;
-        /* Publish results */
-        portENTER_CRITICAL();
-        lastUpdatedVelocity = velocity;
-        lastUpdatedDistance = distance;
-        portEXIT_CRITICAL();
-
-        vTaskDelayUntil(&xLastWakeTime, xPeriod);
-    }
-}
-
 static void vCommRxTask(void * parameters)
 {
   uint8_t command = 0;

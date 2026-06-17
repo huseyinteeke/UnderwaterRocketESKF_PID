@@ -30,6 +30,7 @@
 #define TASK_PRIORITY_MS5837_READ     (tskIDLE_PRIORITY + 2)
 #define TASK_PRIORITY_Comm            (tskIDLE_PRIORITY + 4)
 #define TASK_PRIORITY_VELOCITY        (tskIDLE_PRIORITY + 2)
+#define TASK_PRIORITY_ESKF            (tskIDLE_PRIORITY + 4)
 
 /*
  ############TASK STACK SIZES#################################3
@@ -40,6 +41,9 @@
 #define TASK_STACK_MS5837_READ          1024
 #define TASK_STACK_Comm                  512
 #define TASK_STACK_VELOCITY              512
+#define TASK_STACK_ESKF                 5096
+
+
 /**************************************************************************
  * CONTROL FREQUENCIES
  ***************************************************************************/
