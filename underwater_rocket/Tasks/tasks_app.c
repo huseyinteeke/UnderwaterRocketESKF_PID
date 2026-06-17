@@ -63,7 +63,7 @@ PID_Config_t g_YawPID = {
     .integralError = 0.0f,
 
     .outputLimit   = 40.0f,
-    .integralLimit = 10.0f,
+    .integralLimit = 10.0f
 
 };
 
@@ -80,8 +80,23 @@ PID_Config_t g_DepthPID = {
     .integralError = 0.0f,
 
     .outputLimit   = 20.0f,
-    .integralLimit = 20.0f,
+    .integralLimit = 20.0f
 
+};
+
+
+PID_Config_t g_PitchPID = {
+    .Kp = 80.0f,
+    .Ki = 0.0f,
+    .Kd = 4.0f,
+    .dt = 0.05f,
+
+    .setpoint      = 1.0f,
+    .lastError     = 0.0f,
+    .integralError = 0.0f,
+
+    .outputLimit   = 20.0f,
+    .integralLimit = 20.0f
 };
 
 volatile uint8_t g_ARM_STATUS = 0;
@@ -95,12 +110,12 @@ volatile uint8_t g_ARM_STATUS = 0;
 
 static QueueHandle_t xMaestroCmdQueue;
 /* Semaphore Handles */
-static SemaphoreHandle_t xBNO_DMA_Semaphore;  // BNO055 DMA complete signal
 static SemaphoreHandle_t xMS5837_BinarySem;   // NS5837 DMA complete signal
 /* Task Handles */
 static TaskHandle_t xTaskBNO_Read;
 static TaskHandle_t xTaskYawRollControl;
 static TaskHandle_t xTaskPitchControl;
+static TaskHandle_t xTaskDepthControl;
 static TaskHandle_t xTaskMS5837;
 static TaskHandle_t xMaestroGateKeeper;
 static TaskHandle_t xCommRxTask;
@@ -110,10 +125,13 @@ static TaskHandle_t xVelocityTask;
 /*
  * BT message handle
  */
-static char* volatile g_latest_BT_Msg_Ptr = NULL;
+
 static void vBNOTask(void *pvParameters);
+
 static void vPitchPidTask(void *pvParameters);
-static void vYawRollPidTask(void *pvParameters);
+static void vDepthPidTask(void *pvParameters);
+static void vYawPidTask(void *pvParameters);
+
 static void vMS5837Task(void *pvParameters);
 static void vMaestroGatekeeperTask(void* pvParameters);
 static void vCommRxTask(void * parameters);
@@ -132,8 +150,7 @@ void System_Tasks_Init(void){
 
 
 
-    uint8_t status;
-    status = xTaskCreate(vBNOTask ,
+    xTaskCreate(vBNOTask ,
                 "BNO_READ" ,
                 TASK_STACK_BNO_READ ,
                 NULL,
@@ -149,7 +166,7 @@ void System_Tasks_Init(void){
                         &xTaskMS5837);
         }
 
-        xTaskCreate(vYawRollPidTask ,
+        xTaskCreate(vYawPidTask ,
                     "Yaw_RolController",
                     TASK_STACK_YAWROLL_CONTROL,
                     NULL,
@@ -157,11 +174,19 @@ void System_Tasks_Init(void){
                     &xTaskYawRollControl);
 
         xTaskCreate(vPitchPidTask ,
-                        "Pitch_Controller",
-                        TASK_STACK_PITCH_CONTROL,
-                        NULL,
-                        TASK_PRIORITY_PITCH_CONTROL,
-                        &xTaskPitchControl);
+                    "Pitch_Controller",
+                    TASK_STACK_PITCH_CONTROL,
+                    NULL,
+                    TASK_PRIORITY_PITCH_CONTROL,
+                    &xTaskPitchControl);
+
+        xTaskCreate(vDepthPidTask ,
+                    "Depth_Controller",
+                    TASK_STACK_PITCH_CONTROL,
+                    NULL,
+                    TASK_PRIORITY_PITCH_CONTROL ,
+                    &xTaskDepthControl
+                    );
 
         xTaskCreate(vMaestroGatekeeperTask ,
                     "Maestro gate keeper",
@@ -373,53 +398,69 @@ static void vMS5837Task(void *pvParameters){
 }
 
 static void vPitchPidTask(void *pvParameters){
-    static MaestroMsg_t msg1;
-    static MaestroMsg_t msg2;
-    TickType_t xLastWakeTime;
-    const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
-    float servo_cmd;
-    float current_pitch;
-    float current_depth;
-    float desired_pitch;
-    float roll_cmd;
+  static MaestroMsg_t msg1;
+  static MaestroMsg_t msg2;
+  float current_pitch;
+  float servo_cmd;
 
-    xLastWakeTime = xTaskGetTickCount();
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+
   for(;;){
+     portENTER_CRITICAL();
+     current_pitch = lastUpdatedPitch;
+     portEXIT_CRITICAL();
 
-    portENTER_CRITICAL();
-    current_pitch = lastUpdatedPitch;
-    current_depth = lastUpdatedDepth;
-    portEXIT_CRITICAL();
+     servo_cmd = PID_Calculate(&g_PitchPID, current_pitch);
 
-    //roll_cmd  = PID_Calculate(&g_RollPID, lastUpdatedRoll);
-    servo_cmd = PID_Calculate(&g_DepthPID , current_depth);
+     msg1.channel = CH3;
+     msg1.target = servo_cmd + SERVO_CENTER_DEG;
+     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-
-    msg1.channel = CH3;
-    msg1.target = servo_cmd + SERVO_CENTER_DEG;
-    xQueueSend(xMaestroCmdQueue, &msg1, 0);
-
-    msg2.channel = CH4;
-    msg2.target = SERVO_CENTER_DEG - servo_cmd;
-    xQueueSend(xMaestroCmdQueue, &msg2, 0);
-    vTaskDelayUntil(&xLastWakeTime , xFrequency);
+     msg2.channel = CH4;
+     msg2.target = SERVO_CENTER_DEG - servo_cmd;
+     xQueueSend(xMaestroCmdQueue, &msg2, 0);
+     vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
 }
 
 
 
+static void vDepthPidTask(void *pvParameters)
+{
+
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(DEPTH_CONTROL_PERIOD_MS);
+  float desiredPitch;
+  float current_depth;
+  xLastWakeTime = xTaskGetTickCount();
+  for(;;){
+
+    portENTER_CRITICAL();
+    current_depth = lastUpdatedDepth;
+    portEXIT_CRITICAL();
+
+    desiredPitch = PID_Calculate(&g_DepthPID , current_depth);
+
+    portENTER_CRITICAL();
+     g_PitchPID.setpoint = desiredPitch;
+     portEXIT_CRITICAL();
 
 
-static void vYawRollPidTask(void *pvParameters){
+     vTaskDelayUntil(&xLastWakeTime , xFrequency);
+}
+}
+
+static void vYawPidTask(void *pvParameters){
   static MaestroMsg_t msg1;
   static MaestroMsg_t msg2;
 
-
-
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+
   float servo_cmd;
   xLastWakeTime = xTaskGetTickCount();
+
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
 
@@ -442,7 +483,6 @@ static void vYawRollPidTask(void *pvParameters){
 static void vMaestroGatekeeperTask(void *pvParameters) {
     MaestroMsg_t msg;
     static uint8_t command[CMD_LEN];
-    TickType_t xLastWakeTime = xTaskGetTickCount();
 
     for(;;) {
         while (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
@@ -455,6 +495,9 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
         }
     }
 }
+
+
+
 static uint32_t g_CurrentThrottle = 1000;
 static void vEngineTask(void* parameters)
 {
