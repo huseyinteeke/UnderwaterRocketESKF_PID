@@ -26,8 +26,6 @@ void SubESKF_Init(void) {
     Q(1, 0) = 0.0f;  Q(1, 1) = 0.05f; Q(1, 2) = 0.0f;  // Hız gürültüsü
     Q(2, 0) = 0.0f;  Q(2, 1) = 0.0f;  Q(2, 2) = 0.001f;
 
-    // 3. R Matrisi: Ölçüm Gürültüsü
-    // İvmeölçerin veri kağıdında (datasheet) yazan gürültü yoğunluğu veya test edilerek bulunan varyans değeri.
     Matrix<1, 1> R;
     R(0, 0) = 0.1f;
     mySubESKF.Init();

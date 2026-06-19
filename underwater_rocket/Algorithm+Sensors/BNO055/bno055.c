@@ -396,3 +396,12 @@ void BNO055_ParseQuatBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BN
 
 }
 
+
+
+
+void BNO055_ParseMagBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BNO055_MagData_t *data)
+{
+    data->mag_x = (int16_t)((buffer[1] << 8) | buffer[0]);
+    data->mag_y = (int16_t)((buffer[3] << 8) | buffer[2]);
+    data->mag_z = (int16_t)((buffer[5] << 8) | buffer[4]);
+}
