@@ -25,3 +25,23 @@ target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
     -lc -lm -lnosys
 )
+add_compile_options(
+    -mcpu=cortex-m4 
+    -mthumb 
+    -mthumb-interwork
+    -mfloat-abi=hard 
+    -mfpu=fpv4-sp-d16
+    -ffunction-sections
+    -fdata-sections
+)
+
+add_link_options(
+    -mcpu=cortex-m4 
+    -mthumb 
+    -mthumb-interwork
+    -mfloat-abi=hard 
+    -mfpu=fpv4-sp-d16
+    --specs=nano.specs
+    --specs=nosys.specs
+    -Wl,--gc-sections
+)

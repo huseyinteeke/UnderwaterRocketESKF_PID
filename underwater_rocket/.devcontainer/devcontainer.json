@@ -1,0 +1,12 @@
+{
+    "name": "Embedded Build Env",
+    "build": { "dockerfile": "Dockerfile" },
+    "customizations": {
+        "vscode": {
+            "extensions": ["ms-vscode.cpptools", "marus25.cortex-debug"]
+        }
+    },
+    "runArgs": ["--privileged"],
+    "mounts": ["source=/dev/bus/usb,target=/dev/bus/usb,type=bind"],
+    "remoteUser": "root"
+}
