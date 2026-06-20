@@ -1,0 +1,18 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex Debug",
+            "cwd": "${workspaceRoot}",
+            "executable": "${workspaceFolder}/underwater_rocket/build/underwater_rocket",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "configFiles": [
+                "debug/openocd.cfg"
+            ],
+            "svdFile": "${workspaceFolder}/underwater_rocket/debug/svd/STM32F407.svd",
+            "rtos": "FreeRTOS"
+        }
+    ]
+}

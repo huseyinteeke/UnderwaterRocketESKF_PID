@@ -18,6 +18,14 @@ obj/
 RTOS_workspace/underwater_rocket/Debug/
 RTOS_workspace/underwater_rocket/Release/
 
+
+BNO_Calib/
+led_try_forFOTA/
+maestrotry/
+RTOS_workspace/
+binaries/
+
+
 Thumbs.db
 Desktop.ini
 .DS_Store
