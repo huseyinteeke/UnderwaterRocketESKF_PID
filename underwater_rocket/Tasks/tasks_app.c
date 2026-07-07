@@ -693,6 +693,8 @@ static void vCommTxTask(void* parameters)
     portEXIT_CRITICAL();
 
     HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&toSendlist , sizeof(TelemetryData_t));
+
+
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
 
 
