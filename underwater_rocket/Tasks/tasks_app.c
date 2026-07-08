@@ -20,6 +20,7 @@ void Callback_BNO_DMA_Rx(void);
  
 void MS5837_DMA_Callback(void);
 void MS5837_DMA_Error_Callback(void);
+extern void vTempAutoTuneStarter(void *pvParameters);
  
 // Sadece fonksiyonları tanıtıyoruz
 extern void Pitch_Relay_AutoTune_Task(void *pvParameters);
@@ -151,7 +152,7 @@ static void vEskfUpdateTask(void* parameters);
 // This single copy now suspends Depth too (the first copy did, the second
 // duplicate at the bottom didn't), and its logic is unchanged otherwise.
 // =========================================================================
-static void vTempAutoTuneStarter(void *pvParameters) {
+ void vTempAutoTuneStarter(void *pvParameters) {
     // 1. Aracı suya bırakmak ve yerleşmesi için 15 saniye bekle
     vTaskDelay(pdMS_TO_TICKS(15000));
  
@@ -185,6 +186,8 @@ void System_Tasks_Init(void){
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
     xMaestroCmdQueue    = xQueueCreate(10 , sizeof(MaestroMsg_t));
     xEskfMutex = xSemaphoreCreateMutex();
+
+    
  
  
     xTaskCreate(vBNOTask ,
@@ -374,7 +377,7 @@ static void vBNOTask(void *pvParameters)
   uint8_t initCounter = 0;
  
   TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(BNO_READ_PERIOD_MS);
+  const TickType_t xFrequency = BNO_READ_PERIOD_MS;//2 kez pdms to tick yapılıyor 
  
   for(;;){
     HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1 , burst_buffer, BNO_BURST_READ_SIZE);
@@ -497,8 +500,9 @@ static void vPitchPidTask(void *pvParameters){
   float current_pitch;
   float servo_cmd;
  
-  TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+  TickType_t xLastWakeTime = get_tick_count();//çöp değer alıyodu artık tick count u alıyor
+
+  const TickType_t xFrequency = PITCH_CONTROL_PERIOD_MS; // 2 kez pdms to tick yapıyo
  
   for(;;){
      portENTER_CRITICAL();
@@ -524,7 +528,7 @@ static void vDepthPidTask(void *pvParameters)
 {
  
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(DEPTH_CONTROL_PERIOD_MS);
+  const TickType_t xFrequency = DEPTH_CONTROL_PERIOD_MS; // 2 kez pdms to tick yapıyo
   float desiredPitch;
   float current_depth;
   xLastWakeTime = xTaskGetTickCount();
@@ -550,18 +554,25 @@ static void vYawPidTask(void *pvParameters){
   static MaestroMsg_t msg2;
  
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+  const TickType_t xFrequency = YAW_CONTROL_PERIOD_MS;
  
   float servo_cmd;
+  float current_yaw;
   xLastWakeTime = xTaskGetTickCount();
  
   for(;;){
-    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
+
+    portENTER_CRITICAL();
+    current_yaw =  lastUpdatedYaw; //crticical a aldım (abi sövme lütfen awdjklwadl)
+    portEXIT_CRITICAL();
+
+    servo_cmd = PID_Calculate_Angle(&g_YawPID , lastUpdatedYaw);//PID calculate angle a geçirdim çünkü her ne kadar normalizasyon yapılsa da
+                                                                // 359 dan 1 e gelirken 358 derece dönücekti bu ayar olmadan 
  
     msg1.channel = CH1;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
- 
+  
     msg2.channel = CH0;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);

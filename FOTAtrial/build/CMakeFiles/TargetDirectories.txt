@@ -1,0 +1,3 @@
+/workspaces/UnderwaterRocketESKF_PID/FOTAtrial/build/CMakeFiles/fota.dir
+/workspaces/UnderwaterRocketESKF_PID/FOTAtrial/build/CMakeFiles/edit_cache.dir
+/workspaces/UnderwaterRocketESKF_PID/FOTAtrial/build/CMakeFiles/rebuild_cache.dir

@@ -88,6 +88,7 @@ extern void Maestro_CallBack();
 extern void SEGGER_UART_init(uint32_t);
 extern void CommRx_CallBack();
 extern void CommTx_CallBack();
+extern void vTempAutoTuneStarter(void *pvParameters);
 
 /* USER CODE END PFP */
 
@@ -143,6 +144,8 @@ int main(void)
   DWT_CTRL |= ( 1 << 0);
  SEGGER_UART_init(500000);
  SEGGER_SYSVIEW_Conf();
+
+
 
  System_Tasks_Init();
   //if the control comes here, then the launch of the scheduler hasA failed due to

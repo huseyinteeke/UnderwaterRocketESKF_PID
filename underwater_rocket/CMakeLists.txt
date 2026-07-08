@@ -83,7 +83,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${ALL_SOURCES})
 
 
 add_custom_command(TARGET underwater_rocket POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary underwater_rocket.elf underwater_rocket.bin
-    COMMAND ${CMAKE_COMMAND} -E copy underwater_rocket.bin ${CMAKE_SOURCE_DIR}/binaries/
-    COMMENT "Generating and copying binary to given folder"
+    COMMAND ${CMAKE_OBJCOPY} -O binary $<TARGET_FILE:underwater_rocket> underwater_rocket.bin
+    COMMENT "Generating binary file: underwater_rocket.bin"
 )
+
+
