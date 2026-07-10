@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "underwater_rocket.map"
   "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/BNO055/bno055.c.obj"
   "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/BNO055/bno055.c.obj.d"
   "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MAESTRO/maestro.c.obj"

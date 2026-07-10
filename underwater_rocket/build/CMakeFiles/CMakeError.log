@@ -1,6 +1,6 @@
 Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
 Compiler: /usr/bin/arm-none-eabi-gcc 
-Build flags: -mcpu=cortex-m4;-mthumb;-mfloat-abi=hard;-mfpu=fpv4-sp-d16
+Build flags: -mcpu=cortex-m4;-mthumb;-mfpu=fpv4-sp-d16;-mfloat-abi=hard
 Id flags:  
 
 The output was:
@@ -12,7 +12,7 @@ collect2: error: ld returned 1 exit status
 
 Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
 Compiler: /usr/bin/arm-none-eabi-g++ 
-Build flags: -mcpu=cortex-m4;-mthumb;-mfloat-abi=hard;-mfpu=fpv4-sp-d16
+Build flags: -mcpu=cortex-m4;-mthumb;-mfpu=fpv4-sp-d16;-mfloat-abi=hard
 Id flags:  
 
 The output was:

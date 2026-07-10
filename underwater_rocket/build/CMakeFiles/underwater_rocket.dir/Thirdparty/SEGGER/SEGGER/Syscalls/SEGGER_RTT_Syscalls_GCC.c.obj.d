@@ -8,8 +8,8 @@ CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Sy
  /usr/include/newlib/sys/_types.h /usr/include/newlib/machine/_types.h \
  /usr/include/newlib/machine/_default_types.h \
  /usr/include/newlib/sys/lock.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/SEGGER/SEGGER_RTT.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
  /usr/include/newlib/stdlib.h /usr/include/newlib/_ansi.h \
  /usr/include/newlib/sys/cdefs.h /usr/include/newlib/machine/stdlib.h \
  /usr/include/newlib/alloca.h \

@@ -10,7 +10,7 @@
 
 #include "stdint.h"
 
-#define BNO055_I2C_ADDR_LOW		  (0x28 << 1)				           /*ADR -> GND			*/
+#define BNO055_I2C_ADDR_LOW		  	(0x28 << 1)				           /*ADR -> GND			*/
 #define BNO055_I2C_ADDR_HIGH		(0x29 << 1)		               /*ADR -> VCC			*/
 
 /******************************ONLY READ********************************/

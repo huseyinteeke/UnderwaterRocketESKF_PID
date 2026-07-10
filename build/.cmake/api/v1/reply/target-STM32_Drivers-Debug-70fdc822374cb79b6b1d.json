@@ -1,0 +1,373 @@
+{
+	"artifacts" : 
+	[
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Core/Src/system_stm32f4xx.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.o"
+		},
+		{
+			"path" : "cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.o"
+		}
+	],
+	"backtrace" : 1,
+	"backtraceGraph" : 
+	{
+		"commands" : 
+		[
+			"add_library",
+			"target_link_libraries",
+			"target_sources"
+		],
+		"files" : 
+		[
+			"cmake/stm32cubemx/CMakeLists.txt"
+		],
+		"nodes" : 
+		[
+			{
+				"file" : 0
+			},
+			{
+				"command" : 0,
+				"file" : 0,
+				"line" : 108,
+				"parent" : 0
+			},
+			{
+				"command" : 1,
+				"file" : 0,
+				"line" : 110,
+				"parent" : 0
+			},
+			{
+				"command" : 2,
+				"file" : 0,
+				"line" : 109,
+				"parent" : 0
+			}
+		]
+	},
+	"compileGroups" : 
+	[
+		{
+			"compileCommandFragments" : 
+			[
+				{
+					"fragment" : "-g"
+				}
+			],
+			"defines" : 
+			[
+				{
+					"backtrace" : 2,
+					"define" : "DEBUG"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "STM32F407xx"
+				},
+				{
+					"backtrace" : 2,
+					"define" : "USE_HAL_DRIVER"
+				}
+			],
+			"includes" : 
+			[
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Core/Inc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Drivers/CMSIS/Device/ST/STM32F4xx/Include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Drivers/CMSIS/Include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/BNO055"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/MAESTRO"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/MS5837"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/Navigation"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/PID"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Tasks"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/OS"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/SEGGER"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include"
+				},
+				{
+					"backtrace" : 2,
+					"path" : "/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F"
+				}
+			],
+			"language" : "C",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18
+			]
+		}
+	],
+	"id" : "STM32_Drivers::@768a070a0fe75716b479",
+	"name" : "STM32_Drivers",
+	"paths" : 
+	{
+		"build" : "cmake/stm32cubemx",
+		"source" : "cmake/stm32cubemx"
+	},
+	"sourceGroups" : 
+	[
+		{
+			"name" : "Source Files",
+			"sourceIndexes" : 
+			[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15,
+				16,
+				17,
+				18
+			]
+		}
+	],
+	"sources" : 
+	[
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Core/Src/system_stm32f4xx.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_i2c_ex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_rcc_ex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_flash_ramfunc.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_gpio.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma_ex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_dma.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_pwr_ex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_cortex.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 3,
+			"compileGroupIndex" : 0,
+			"path" : "Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c",
+			"sourceGroupIndex" : 0
+		}
+	],
+	"type" : "OBJECT_LIBRARY"
+}

@@ -1,7 +1,7 @@
 CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
  /usr/include/newlib/stdlib.h /usr/include/newlib/machine/ieeefp.h \
  /usr/include/newlib/_ansi.h /usr/include/newlib/newlib.h \
  /usr/include/newlib/_newlib_version.h /usr/include/newlib/sys/config.h \

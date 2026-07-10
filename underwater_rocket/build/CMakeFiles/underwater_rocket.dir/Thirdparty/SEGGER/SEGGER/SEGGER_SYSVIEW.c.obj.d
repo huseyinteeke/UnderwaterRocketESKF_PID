@@ -16,9 +16,9 @@ CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: 
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW_Int.h \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.h \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/Global.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/Global.h \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW_ConfDefaults.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Conf.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Conf.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.h \
  /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdint.h

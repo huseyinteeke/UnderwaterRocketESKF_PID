@@ -1,96 +1,112 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(underwater_rocket C CXX ASM)
+#
+# This file is generated only once,
+# and is not re-generated if converter is called multiple times.
+#
+# User is free to modify the file as much as necessary
+#
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+# Setup compiler settings
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS ON)
 
+
+# Define the build type
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Debug")
+endif()
+
+# Set the project name
+set(CMAKE_PROJECT_NAME underwater_rocket)
+
+# Enable compile command to ease indexing with e.g. clangd
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
+
+# Core project settings
+project(${CMAKE_PROJECT_NAME})
+message("Build type: " ${CMAKE_BUILD_TYPE})
+
+# Enable CMake support for ASM and C languages
+enable_language(C ASM)
+
+# Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
 
+
+
+
+# Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
 
-# Linker Script (Bellek haritası) ve optimizasyon ayarları
-target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
-    -T${CMAKE_CURRENT_SOURCE_DIR}/STM32F407VGTX_FLASH.ld
-    -Wl,-Map=${CMAKE_PROJECT_NAME}.map
-    -Wl,--gc-sections
-    -Wl,--print-memory-usage
+# Link directories setup
+target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user defined library search paths
+)
+
+file(GLOB_RECURSE USER_SOURCES 
+    "Algorithm+Sensors/*.c" 
+    "Algorithm+Sensors/*.cpp" 
+    "Tasks/*.c" 
+    "Tasks/*.cpp"
+    "Thirdparty/*.c"
+    "Thirdparty/*.s"
+    "Thirdparty/*.S"
 )
 
 
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/ST/CMSIS/DSP/Lib/GCC/libarm_cortexM4lf_math.a"
-    m
+# Add sources to executable
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user sources here
+    ${USER_SOURCES}
 )
 
+# Add include paths
+target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
+    # Add user defined include paths
+    Thirdparty/SEGGER/Config
+    Thirdparty/SEGGER/OS
+    Thirdparty/SEGGER/SEGGER
+    Thirdparty/FreeRTOS
+    Thirdparty/FreeRTOS/include
+    Algorithm+Sensors/BNO055
+    Algorithm+Sensors/MAESTRO
+    Algorithm+Sensors/MS5837
+    Algorithm+Sensors/Navigation
+    Algorithm+Sensors/PID
+    Tasks
+    Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F
+    Thirdparty/SEGGER
+)
 
+# Add project symbols (macros)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
-    ARM_MATH_CM4             # Cortex-M4 
-    __FPU_PRESENT=1          
+    # Add user defined symbols
 )
 
+# Remove wrong libob.a library dependency when using cpp files
+list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
+
+
+set(LINKER_SCRIPT "${CMAKE_SOURCE_DIR}/STM32F407VGTX_FLASH.ld") 
 
 
 
-add_compile_options(
-    -mcpu=cortex-m4 
-    -mthumb 
-    -mthumb-interwork
-    -mfloat-abi=hard 
-    -mfpu=fpv4-sp-d16
-    -ffunction-sections
-    -fdata-sections
-)
+# Add linked libraries
+target_link_libraries(${CMAKE_PROJECT_NAME}
+    stm32cubemx
 
-add_link_options(
-    -mcpu=cortex-m4 
-    -mthumb 
-    -mthumb-interwork
-    -mfloat-abi=hard 
-    -mfpu=fpv4-sp-d16
-    --specs=nano.specs
-    --specs=nosys.specs
-    -Wl,--gc-sections
-)
-
-
-aux_source_directory(Algorithm+Sensors/BNO055 BNO_SOURCES)
-aux_source_directory(Algorithm+Sensors/MAESTRO MAESTRO_SOURCES)
-aux_source_directory(Algorithm+Sensors/MS5837 MS5837_SOURCES)
-aux_source_directory(Algorithm+Sensors/PID PID_SOURCES)
-aux_source_directory(Algorithm+Sensors/Navigation NAVIGATION_SOURCES)
-aux_source_directory(Tasks TASKS_SOURCES)
-
-
-aux_source_directory(Thirdparty/FreeRTOS RTOS_SOURCES)
-aux_source_directory(Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F RTOS_PORT_SOURCES)
-aux_source_directory(Thirdparty/FreeRTOS/portable/MemMang RTOS_MEM_SOURCES)
-aux_source_directory(Thirdparty/SEGGER/SEGGER SEGGER_SOURCES)
-
-set(ALL_SOURCES 
-    ${BNO_SOURCES} 
-    ${MAESTRO_SOURCES} 
-    ${MS5837_SOURCES} 
-    ${PID_SOURCES} 
-    ${NAVIGATION_SOURCES}
-    ${TASKS_SOURCES}
-    ${RTOS_SOURCES}
-    ${RTOS_PORT_SOURCES}
-    ${RTOS_MEM_SOURCES}
-    ${SEGGER_SOURCES}
-)
-
-target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${ALL_SOURCES})
-
-
-add_custom_command(TARGET underwater_rocket POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary underwater_rocket underwater_rocket.bin
-    COMMENT "Generating binary file: underwater_rocket.bin"
-)
+    # Add user defined libraries
+    m
+    ${CMAKE_SOURCE_DIR}/Thirdparty/libarm_cortexM4lf_math.a
+    )
 
 
 
-add_custom_command(TARGET underwater_rocket POST_BUILD
-    COMMAND ${CMAKE_OBJCOPY} -O binary underwater_rocket underwater_rocket.bin
-    COMMAND ${CMAKE_COMMAND} -E copy underwater_rocket.bin ${CMAKE_SOURCE_DIR}/binaries/
-    COMMENT "Generating and copying binary to given folder"
+add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
+    COMMAND arm-none-eabi-objcopy -O ihex $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.hex
+    COMMAND arm-none-eabi-objcopy -O binary $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.bin
+    COMMAND arm-none-eabi-size $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
+    COMMENT "Building .hex and .bin files, and printing size..."
 )

@@ -34,34 +34,34 @@ CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj: \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
  /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Tasks/tasks_config.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/Navigation/eskf_c_wrapper.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/FreeRTOS.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/FreeRTOSConfig.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/SEGGER/SEGGER.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf_c_wrapper.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/FreeRTOS.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/FreeRTOSConfig.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER.h \
  /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdarg.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/Global.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW_ConfDefaults.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Conf.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/projdefs.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/portable.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/deprecated_definitions.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/portmacro.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/mpu_wrappers.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/task.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/list.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/semphr.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/queue.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/task.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Thirdparty/FreeRTOS/include/queue.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/BNO055/bno055_func_struct.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/BNO055/bno055.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/MS5837/ms5837.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/PID/pid.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/Global.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW_ConfDefaults.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Conf.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_RTT_Conf.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/projdefs.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/portable.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/deprecated_definitions.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/portmacro.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/mpu_wrappers.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/task.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/list.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/semphr.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/queue.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/task.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/include/queue.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/BNO055/bno055_func_struct.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/BNO055/bno055.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/MS5837/ms5837.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/PID/pid.h \
  /usr/lib/gcc/arm-none-eabi/10.3.1/include/stdbool.h \
- /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32cubemx/../../Algorithm+Sensors/MAESTRO/maestro.h \
+ /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/MAESTRO/maestro.h \
  /usr/include/newlib/stdio.h /usr/include/newlib/_ansi.h \
  /usr/include/newlib/newlib.h /usr/include/newlib/_newlib_version.h \
  /usr/include/newlib/sys/config.h /usr/include/newlib/machine/ieeefp.h \

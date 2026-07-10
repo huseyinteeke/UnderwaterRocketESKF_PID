@@ -208,10 +208,24 @@ CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MS5837/ms5837.c.s: cmake_forc
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MS5837/ms5837.c.s"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/MS5837/ms5837.c -o CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MS5837/ms5837.c.s
 
+CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj: ../Algorithm+Sensors/Navigation/eskf.cpp
+CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj"
+	/usr/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj -MF CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj.d -o CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf.cpp
+
+CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.i"
+	/usr/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf.cpp > CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.i
+
+CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.s"
+	/usr/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf.cpp -o CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.s
+
 CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
 CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj: ../Algorithm+Sensors/PID/pid.c
 CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building C object CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj -MF CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj.d -o CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/PID/pid.c
 
 CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.i: cmake_force
@@ -225,7 +239,7 @@ CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.s: cmake_force
 CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
 CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj: ../Tasks/tasks_app.c
 CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building C object CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj -MF CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj.d -o CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Tasks/tasks_app.c
 
 CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.i: cmake_force
@@ -236,116 +250,103 @@ CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.s"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Tasks/tasks_app.c -o CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj: ../Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj: ../Thirdparty/FreeRTOS/croutine.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/croutine.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/croutine.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/croutine.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj: ../Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj: ../Thirdparty/FreeRTOS/event_groups.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/event_groups.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/event_groups.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/event_groups.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj: ../Thirdparty/SEGGER/Rec/segger_uart.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Rec/segger_uart.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj: ../Thirdparty/FreeRTOS/list.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/list.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Rec/segger_uart.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/list.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Rec/segger_uart.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/list.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj: ../Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building ASM object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj"
-	/usr/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj: ../Thirdparty/FreeRTOS/portable/MemMang/heap_4.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing ASM source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.i"
-	/usr/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling ASM source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.s"
-	/usr/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj: ../Thirdparty/FreeRTOS/queue.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/queue.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/queue.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/queue.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj: ../Thirdparty/FreeRTOS/stream_buffer.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/stream_buffer.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/stream_buffer.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.s
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj: ../Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.i
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/stream_buffer.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.s
 
 CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
 CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.obj: ../Thirdparty/FreeRTOS/tasks.c
@@ -361,38 +362,10 @@ CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.s"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/tasks.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj: ../Thirdparty/FreeRTOS/queue.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/queue.c
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/queue.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.i
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/queue.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.s
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj: ../Thirdparty/FreeRTOS/list.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/list.c
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/list.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.i
-
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/list.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.s
-
 CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
 CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj: ../Thirdparty/FreeRTOS/timers.c
 CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/timers.c
 
 CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.i: cmake_force
@@ -403,89 +376,116 @@ CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.s"
 	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/timers.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj: ../Thirdparty/FreeRTOS/event_groups.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/event_groups.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj: ../Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/event_groups.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/event_groups.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj: ../Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj: ../Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj: ../Thirdparty/FreeRTOS/portable/MemMang/heap_4.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj: ../Thirdparty/SEGGER/Rec/segger_uart.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Rec/segger_uart.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Rec/segger_uart.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/Rec/segger_uart.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.s
 
-CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj: ../Algorithm+Sensors/Navigation/eskf.cpp
-CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj"
-	/usr/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj -MF CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj.d -o CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf.cpp
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c
 
-CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.i"
-	/usr/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf.cpp > CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.i
 
-CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.s"
-	/usr/bin/arm-none-eabi-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Algorithm+Sensors/Navigation/eskf.cpp -o CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT.c.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj: ../Thirdparty/FreeRTOS/croutine.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/croutine.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building ASM object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj"
+	/usr/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/croutine.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing ASM source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.i"
+	/usr/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/croutine.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling ASM source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.s"
+	/usr/bin/arm-none-eabi-gcc $(ASM_DEFINES) $(ASM_INCLUDES) $(ASM_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.s
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj: ../Thirdparty/FreeRTOS/stream_buffer.c
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/stream_buffer.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.i"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/stream_buffer.c > CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.i
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.i
 
-CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.s"
-	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/FreeRTOS/stream_buffer.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.s
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.s
+
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: ../Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c
+
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.i
+
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.s
+
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj: CMakeFiles/underwater_rocket.dir/flags.make
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj: ../Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj: CMakeFiles/underwater_rocket.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building C object CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj -MF CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj.d -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj -c /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c
+
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.i"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c > CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.i
+
+CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.s"
+	/usr/bin/arm-none-eabi-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c -o CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.s
 
 # Object files for target underwater_rocket
 underwater_rocket_OBJECTS = \
@@ -499,8 +499,18 @@ underwater_rocket_OBJECTS = \
 "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/BNO055/bno055.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MAESTRO/maestro.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MS5837/ms5837.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj" \
 "CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.obj" \
+"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj" \
@@ -508,17 +518,7 @@ underwater_rocket_OBJECTS = \
 "CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_ASM_ARMv7M.S.obj" \
 "CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj" \
 "CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj" \
-"CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj"
+"CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj"
 
 # External object files for target underwater_rocket
 underwater_rocket_EXTERNAL_OBJECTS = \
@@ -552,8 +552,18 @@ underwater_rocket: CMakeFiles/underwater_rocket.dir/startup_stm32f407xx.s.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/BNO055/bno055.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MAESTRO/maestro.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/MS5837/ms5837.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/PID/pid.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Tasks/tasks_app.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.obj
+underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Config/SEGGER_SYSVIEW_Config_FreeRTOS.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/OS/SEGGER_SYSVIEW_FreeRTOS.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/Rec/segger_uart.c.obj
@@ -562,16 +572,6 @@ underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEG
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_RTT_printf.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/SEGGER_SYSVIEW.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/SEGGER/SEGGER/Syscalls/SEGGER_RTT_Syscalls_GCC.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/tasks.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/queue.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/list.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/timers.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/event_groups.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F/port.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/portable/MemMang/heap_4.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Algorithm+Sensors/Navigation/eskf.cpp.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/croutine.c.obj
-underwater_rocket: CMakeFiles/underwater_rocket.dir/Thirdparty/FreeRTOS/stream_buffer.c.obj
 underwater_rocket: cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Core/Src/system_stm32f4xx.c.obj
 underwater_rocket: cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim.c.obj
 underwater_rocket: cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_tim_ex.c.obj
@@ -592,15 +592,14 @@ underwater_rocket: cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/
 underwater_rocket: cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_exti.c.obj
 underwater_rocket: cmake/stm32cubemx/CMakeFiles/STM32_Drivers.dir/__/__/Drivers/STM32F4xx_HAL_Driver/Src/stm32f4xx_hal_uart.c.obj
 underwater_rocket: CMakeFiles/underwater_rocket.dir/build.make
-underwater_rocket: ../Middlewares/ST/CMSIS/DSP/Lib/GCC/libarm_cortexM4lf_math.a
+underwater_rocket: ../Thirdparty/libarm_cortexM4lf_math.a
 underwater_rocket: CMakeFiles/underwater_rocket.dir/link.txt
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Linking CXX executable underwater_rocket"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/underwater_rocket.dir/link.txt --verbose=$(VERBOSE)
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating binary file: underwater_rocket.bin"
-	/usr/bin/arm-none-eabi-objcopy -O binary underwater_rocket underwater_rocket.bin
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Generating and copying binary to given folder"
-	/usr/bin/arm-none-eabi-objcopy -O binary underwater_rocket underwater_rocket.bin
-	/usr/bin/cmake -E copy underwater_rocket.bin /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/binaries/
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold "Building .hex and .bin files, and printing size..."
+	arm-none-eabi-objcopy -O ihex /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/underwater_rocket underwater_rocket.hex
+	arm-none-eabi-objcopy -O binary /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/underwater_rocket underwater_rocket.bin
+	arm-none-eabi-size /workspaces/UnderwaterRocketESKF_PID/underwater_rocket/build/underwater_rocket
 
 # Rule to build all files generated by this target.
 CMakeFiles/underwater_rocket.dir/build: underwater_rocket

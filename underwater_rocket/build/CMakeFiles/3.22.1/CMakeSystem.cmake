@@ -3,7 +3,7 @@ set(CMAKE_HOST_SYSTEM_NAME "Linux")
 set(CMAKE_HOST_SYSTEM_VERSION "6.17.0-35-generic")
 set(CMAKE_HOST_SYSTEM_PROCESSOR "x86_64")
 
-include("/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/cmake/stm32-gcc.cmake")
+include("/workspaces/UnderwaterRocketESKF_PID/underwater_rocket/arm-gcc-toolchain.cmake")
 
 set(CMAKE_SYSTEM "Generic")
 set(CMAKE_SYSTEM_NAME "Generic")

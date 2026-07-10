@@ -82,13 +82,14 @@ static inline void BNO_Delay(BNO055Init_TypeDef_t *dev , uint32_t ms){
  */
 
 BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
-  HAL_StatusTypeDef status = HAL_ERROR;
+ /*
+	HAL_StatusTypeDef status = HAL_ERROR;
   status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress, 3,
       dev->i2cTimeout);
 	if (status != HAL_OK ){
 		return BNO_I2C_ERROR;
 	}
-
+*/
 	// 1.2. Goto page 0
 	BNO_SetPage(dev, 0);
 

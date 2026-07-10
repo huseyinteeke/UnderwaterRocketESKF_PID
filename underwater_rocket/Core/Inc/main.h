@@ -99,8 +99,6 @@ void Error_Handler(void);
 #define SWCLK_GPIO_Port GPIOA
 #define Audio_RST_Pin GPIO_PIN_4
 #define Audio_RST_GPIO_Port GPIOD
-#define OTG_FS_OverCurrent_Pin GPIO_PIN_5
-#define OTG_FS_OverCurrent_GPIO_Port GPIOD
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 #define MEMS_INT2_Pin GPIO_PIN_1

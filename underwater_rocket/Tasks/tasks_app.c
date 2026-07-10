@@ -19,8 +19,8 @@ void MS5837_DMA_Error_Callback(void);
 /*
  * ********HAL COMMUNICATION LAYERS******************
  */
-extern I2C_HandleTypeDef hi2c1;
-extern I2C_HandleTypeDef hi2c2;
+extern I2C_HandleTypeDef hi2c1;	//BNO
+extern I2C_HandleTypeDef hi2c3; //MS
 extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
 extern TIM_HandleTypeDef htim2;
@@ -314,7 +314,7 @@ static void vBNOTask(void *pvParameters)
 {
   BNO_Status_t status;
   BNO055Init_TypeDef_t localBNO = {
-      .i2cHandler = &hi2c2,
+      .i2cHandler = &hi2c1,
       .i2cAddress = BNO055_I2C_ADDR_LOW,
       .i2cTimeout = 10,
       .dmaRxCallback    = Callback_BNO_DMA_Rx,
@@ -332,7 +332,7 @@ static void vBNOTask(void *pvParameters)
       .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
   };
 
-  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+  //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
   status = BNO055_Init(&localBNO);
 
 
@@ -408,7 +408,7 @@ static void vMS5837Task(void *pvParameters){
     static MS5837_t localMS5837;
     localMS5837.Delay = My_RTOS_Delay_Func;
 
-    if(MS5837_Init(&localMS5837, &hi2c1) != HAL_OK){
+    if(MS5837_Init(&localMS5837, &hi2c3) != HAL_OK){
             SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
             vTaskDelete(NULL);
     }
@@ -742,7 +742,7 @@ void My_RTOS_Delay_Func(uint32_t period_ms)
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-    if(hi2c->Instance == I2C2)
+    if(hi2c->Instance == I2C1)
     {
         Callback_BNO_DMA_Rx();
     }
