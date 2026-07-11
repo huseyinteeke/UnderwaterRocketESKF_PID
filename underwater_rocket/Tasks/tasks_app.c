@@ -21,12 +21,12 @@ void MS5837_DMA_Error_Callback(void);
  */
 extern I2C_HandleTypeDef hi2c1;	//BNO
 extern I2C_HandleTypeDef hi2c3; //MS
-extern UART_HandleTypeDef huart4;
+//extern UART_HandleTypeDef huart4;
 extern UART_HandleTypeDef huart5;
 extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart6;
 
-Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
+Maestro_Handler_t ServoDriver = { &huart5 , FAST  , FAST};
 
 
 
@@ -321,18 +321,22 @@ static void vBNOTask(void *pvParameters)
       .dmaErrorCallback = Callback_BNO_Error,
       .delayCallback    = My_RTOS_Delay_Func,
       .powerMode     = BNO_PWR_MODE_NORMAL,
-      .operationMode = BNO_MODE_NDOF,
+      .operationMode = BNO_MODE_IMU,
       .externalCrystal = 0,
       .axisRemap = BNO_AXIS_REMAP_P1,
       .accelUnit = BNO_ACC_UNIT_MS2,
       .gyroUnit  = BNO_GYRO_UNIT_DPS,
       .eulerUnit = BNO_EULER_UNIT_DEG,
       .tempUnit  = BNO_TEMP_UNIT_C,
-      .useStoredCalibration = 1,
+      .useStoredCalibration = 0,
       .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
   };
 
-  //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, GPIO_PIN_SET);
+  vTaskDelay(100);
+
+
+
   status = BNO055_Init(&localBNO);
 
 

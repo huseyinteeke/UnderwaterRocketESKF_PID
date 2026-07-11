@@ -56,7 +56,6 @@ DMA_HandleTypeDef hdma_i2c3_tx;
 
 TIM_HandleTypeDef htim2;
 
-UART_HandleTypeDef huart4;
 UART_HandleTypeDef huart5;
 UART_HandleTypeDef huart6;
 DMA_HandleTypeDef hdma_uart5_rx;
@@ -71,7 +70,6 @@ DMA_HandleTypeDef hdma_usart6_tx;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_UART4_Init(void);
 static void MX_UART5_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART6_UART_Init(void);
@@ -104,7 +102,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-
+  SCB->VTOR = 0x8010000;
 
   /* USER CODE END 1 */
 
@@ -127,7 +125,6 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_DMA_Init();
-  MX_UART4_Init();
   MX_UART5_Init();
   MX_TIM2_Init();
   MX_USART6_UART_Init();
@@ -136,13 +133,18 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 10, 0);
 
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+
 
   //Enable the CYCCNT counter.
   DWT_CTRL |= ( 1 << 0);
-// SEGGER_UART_init(500000);
-// SEGGER_SYSVIEW_Conf();
+ SEGGER_UART_init(500000);
+ SEGGER_SYSVIEW_Conf();
 
-HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, GPIO_PIN_SET);
+
+
  System_Tasks_Init();
   //if the control comes here, then the launch of the scheduler hasA failed due to
   //insufficient memory in heap
@@ -335,39 +337,6 @@ static void MX_TIM2_Init(void)
 }
 
 /**
-  * @brief UART4 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_UART4_Init(void)
-{
-
-  /* USER CODE BEGIN UART4_Init 0 */
-
-  /* USER CODE END UART4_Init 0 */
-
-  /* USER CODE BEGIN UART4_Init 1 */
-
-  /* USER CODE END UART4_Init 1 */
-  huart4.Instance = UART4;
-  huart4.Init.BaudRate = 38400;
-  huart4.Init.WordLength = UART_WORDLENGTH_8B;
-  huart4.Init.StopBits = UART_STOPBITS_1;
-  huart4.Init.Parity = UART_PARITY_NONE;
-  huart4.Init.Mode = UART_MODE_TX_RX;
-  huart4.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart4.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_HalfDuplex_Init(&huart4) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN UART4_Init 2 */
-
-  /* USER CODE END UART4_Init 2 */
-
-}
-
-/**
   * @brief UART5 Initialization Function
   * @param None
   * @retval None
@@ -497,6 +466,9 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOD, LD4_Pin|LD3_Pin|LD5_Pin|LD6_Pin
                           |Audio_RST_Pin|GPIO_PIN_5, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : CS_I2C_SPI_Pin */
   GPIO_InitStruct.Pin = CS_I2C_SPI_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -504,12 +476,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(CS_I2C_SPI_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : OTG_FS_PowerSwitchOn_Pin */
-  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin;
+  /*Configure GPIO pins : OTG_FS_PowerSwitchOn_Pin PC10 */
+  GPIO_InitStruct.Pin = OTG_FS_PowerSwitchOn_Pin|GPIO_PIN_10;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(OTG_FS_PowerSwitchOn_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PDM_OUT_Pin */
   GPIO_InitStruct.Pin = PDM_OUT_Pin;
@@ -614,12 +586,12 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-    if(huart->Instance == huart4.Instance)
+    /*if(huart->Instance == huart4.Instance)
     {
       Maestro_CallBack();
 
-    }
-    else if(huart->Instance == huart6.Instance)
+    }*/
+    if(huart->Instance == huart6.Instance)
     {
 
       CommTx_CallBack();

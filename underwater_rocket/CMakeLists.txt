@@ -103,10 +103,9 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
     )
 
 
-
 add_custom_command(TARGET ${CMAKE_PROJECT_NAME} POST_BUILD
-    COMMAND arm-none-eabi-objcopy -O ihex $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.hex
-    COMMAND arm-none-eabi-objcopy -O binary $<TARGET_FILE:${CMAKE_PROJECT_NAME}> ${CMAKE_PROJECT_NAME}.bin
+    COMMAND arm-none-eabi-objcopy -O ihex $<TARGET_FILE:${CMAKE_PROJECT_NAME}> "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.hex"
+    COMMAND arm-none-eabi-objcopy -O binary $<TARGET_FILE:${CMAKE_PROJECT_NAME}> "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.bin"
     COMMAND arm-none-eabi-size $<TARGET_FILE:${CMAKE_PROJECT_NAME}>
-    COMMENT "Building .hex and .bin files, and printing size..."
+    COMMENT "Building .hex and .bin files in ${CMAKE_CURRENT_BINARY_DIR}..."
 )
