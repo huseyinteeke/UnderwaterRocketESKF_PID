@@ -56,9 +56,10 @@ DMA_HandleTypeDef hdma_i2c3_tx;
 
 TIM_HandleTypeDef htim2;
 
-UART_HandleTypeDef huart5;
+UART_HandleTypeDef huart3;
 UART_HandleTypeDef huart6;
-DMA_HandleTypeDef hdma_uart5_rx;
+DMA_HandleTypeDef hdma_usart3_rx;
+DMA_HandleTypeDef hdma_usart3_tx;
 DMA_HandleTypeDef hdma_usart6_rx;
 DMA_HandleTypeDef hdma_usart6_tx;
 
@@ -70,11 +71,11 @@ DMA_HandleTypeDef hdma_usart6_tx;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_DMA_Init(void);
-static void MX_UART5_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART6_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_I2C3_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 
@@ -90,6 +91,52 @@ extern void CommTx_CallBack();
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+/* BNO055 Bus Stuck problem */
+void BNO_I2C_Clear(void)
+{
+
+	GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+	// Activate clock
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+
+
+	uint16_t SCL_Pin = GPIO_PIN_6;
+	uint16_t SDA_Pin = GPIO_PIN_7;
+	GPIO_TypeDef* I2C_Port = GPIOB;
+
+	GPIO_InitStruct.Pin = SCL_Pin | SDA_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+	HAL_GPIO_Init(I2C_Port, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(I2C_Port, SCL_Pin | SDA_Pin, GPIO_PIN_SET);
+	HAL_Delay(1);
+
+	for (int i = 0; i < 9; i++)
+	{
+		HAL_GPIO_WritePin(I2C_Port, SCL_Pin, GPIO_PIN_RESET); // SCL LOW
+		HAL_Delay(1);
+		HAL_GPIO_WritePin(I2C_Port, SCL_Pin, GPIO_PIN_SET);   // SCL HIGH
+		HAL_Delay(1);
+	}
+
+	HAL_GPIO_WritePin(I2C_Port, SCL_Pin, GPIO_PIN_RESET); // Pre
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(I2C_Port, SDA_Pin, GPIO_PIN_RESET); // SDA Stop
+	HAL_Delay(1);
+
+	HAL_GPIO_WritePin(I2C_Port, SCL_Pin, GPIO_PIN_SET);   // SCL HIGH
+	HAL_Delay(1);
+	HAL_GPIO_WritePin(I2C_Port, SDA_Pin, GPIO_PIN_SET);   // SDA HIGH
+	HAL_Delay(1);
+
+	// Let pins to start as normal I2C pins
+	HAL_GPIO_DeInit(I2C_Port, SCL_Pin | SDA_Pin);
+}
+
+
 
 /* USER CODE END 0 */
 
@@ -102,7 +149,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-  SCB->VTOR = 0x8010000;
+  //SCB->VTOR = 0x8010000;
 
   /* USER CODE END 1 */
 
@@ -112,6 +159,10 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
+
+
+
+
   HAL_NVIC_SetPriorityGrouping(NVIC_PRIORITYGROUP_4);
   /* USER CODE END Init */
 
@@ -124,18 +175,23 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+
+
+
   MX_DMA_Init();
-  MX_UART5_Init();
   MX_TIM2_Init();
   MX_USART6_UART_Init();
+  BNO_I2C_Clear();
+
   MX_I2C1_Init();
   MX_I2C3_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 10, 0);
 
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
+  for (volatile uint32_t i = 0; i < 200000; i++) {
+      __NOP();
+  }
 
 
   //Enable the CYCCNT counter.
@@ -143,8 +199,9 @@ int main(void)
  SEGGER_UART_init(500000);
  SEGGER_SYSVIEW_Conf();
 
-
-
+ HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 , GPIO_PIN_SET);
+ HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13 , GPIO_PIN_SET);
+ HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10 , GPIO_PIN_SET);
  System_Tasks_Init();
   //if the control comes here, then the launch of the scheduler hasA failed due to
   //insufficient memory in heap
@@ -225,7 +282,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 50000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -337,35 +394,35 @@ static void MX_TIM2_Init(void)
 }
 
 /**
-  * @brief UART5 Initialization Function
+  * @brief USART3 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_UART5_Init(void)
+static void MX_USART3_UART_Init(void)
 {
 
-  /* USER CODE BEGIN UART5_Init 0 */
+  /* USER CODE BEGIN USART3_Init 0 */
 
-  /* USER CODE END UART5_Init 0 */
+  /* USER CODE END USART3_Init 0 */
 
-  /* USER CODE BEGIN UART5_Init 1 */
+  /* USER CODE BEGIN USART3_Init 1 */
 
-  /* USER CODE END UART5_Init 1 */
-  huart5.Instance = UART5;
-  huart5.Init.BaudRate = 115200;
-  huart5.Init.WordLength = UART_WORDLENGTH_8B;
-  huart5.Init.StopBits = UART_STOPBITS_1;
-  huart5.Init.Parity = UART_PARITY_NONE;
-  huart5.Init.Mode = UART_MODE_TX_RX;
-  huart5.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart5.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart5) != HAL_OK)
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 38400;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN UART5_Init 2 */
+  /* USER CODE BEGIN USART3_Init 2 */
 
-  /* USER CODE END UART5_Init 2 */
+  /* USER CODE END USART3_Init 2 */
 
 }
 
@@ -409,16 +466,19 @@ static void MX_DMA_Init(void)
 {
 
   /* DMA controller clock enable */
-  __HAL_RCC_DMA1_CLK_ENABLE();
   __HAL_RCC_DMA2_CLK_ENABLE();
+  __HAL_RCC_DMA1_CLK_ENABLE();
 
   /* DMA interrupt init */
-  /* DMA1_Stream0_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(DMA1_Stream0_IRQn, 10, 0);
-  HAL_NVIC_EnableIRQ(DMA1_Stream0_IRQn);
+  /* DMA1_Stream1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream1_IRQn, 10, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream1_IRQn);
   /* DMA1_Stream2_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream2_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream2_IRQn);
+  /* DMA1_Stream3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Stream3_IRQn, 10, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Stream3_IRQn);
   /* DMA1_Stream4_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Stream4_IRQn, 10, 0);
   HAL_NVIC_EnableIRQ(DMA1_Stream4_IRQn);
@@ -586,11 +646,11 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-    /*if(huart->Instance == huart4.Instance)
+    if(huart->Instance == huart3.Instance)
     {
       Maestro_CallBack();
 
-    }*/
+    }
     if(huart->Instance == huart6.Instance)
     {
 

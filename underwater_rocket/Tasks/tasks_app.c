@@ -21,12 +21,11 @@ void MS5837_DMA_Error_Callback(void);
  */
 extern I2C_HandleTypeDef hi2c1;	//BNO
 extern I2C_HandleTypeDef hi2c3; //MS
-//extern UART_HandleTypeDef huart4;
-extern UART_HandleTypeDef huart5;
+extern UART_HandleTypeDef huart3;
 extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart6;
 
-Maestro_Handler_t ServoDriver = { &huart5 , FAST  , FAST};
+Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
 
 
 
@@ -279,7 +278,7 @@ static void vEskfPredictTask(void* parameters)
 
 
 
-
+static float state_arr[3];
 static void vEskfUpdateTask(void* parameters)
 {
   static float accel_x;
@@ -299,6 +298,15 @@ static void vEskfUpdateTask(void* parameters)
           SubESKF_UpdateIMU(accel_x, current_pwm);
           xSemaphoreGive(xEskfMutex);
       }
+
+    SubESKF_GetState(state_arr);
+
+    portENTER_CRITICAL();
+
+    lastUpdatedDistance = state_arr[0];
+    lastUpdatedVelocity = state_arr[1];
+
+    portEXIT_CRITICAL();
   }
 
 }
@@ -312,7 +320,7 @@ static void vEskfUpdateTask(void* parameters)
  ******************************************************************************/
 static void vBNOTask(void *pvParameters)
 {
-  BNO_Status_t status;
+  BNO_Status_t status = BNO_TIMEOUT;
   BNO055Init_TypeDef_t localBNO = {
       .i2cHandler = &hi2c1,
       .i2cAddress = BNO055_I2C_ADDR_LOW,
@@ -332,19 +340,15 @@ static void vBNOTask(void *pvParameters)
       .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
   };
 
-  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, GPIO_PIN_SET);
-  vTaskDelay(100);
-
-
 
   status = BNO055_Init(&localBNO);
 
-
-  if(status != BNO_OK)
+  while(status != BNO_OK)
   {
-      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-      vTaskDelete(NULL);
+	  status = BNO055_Init(&localBNO);
+	  vTaskDelay(100);
   }
+
   portENTER_CRITICAL();
   PID_Reset(&g_YawPID);
   portEXIT_CRITICAL();
@@ -366,6 +370,7 @@ static void vBNOTask(void *pvParameters)
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     BNO055_ParseEulerBuffer(&localBNO, &burst_buffer[0] , &tmp);
     BNO055_ParseAccelBuffer(&localBNO, &burst_buffer[14], &acctmp);
+
     float raw_heading = 450.0f - tmp.heading;
     while (raw_heading >= 360.0f) raw_heading -= 360.0f;
     while (raw_heading < 0.0f)    raw_heading += 360.0f;
@@ -595,7 +600,7 @@ static void vEngineTask(void* parameters)
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 80 ; i++){
+    for(int i = 0 ; i < 140 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
 
@@ -605,8 +610,8 @@ static void vEngineTask(void* parameters)
 
       vTaskDelay(pdMS_TO_TICKS(20));
   }
-  vTaskDelay(pdMS_TO_TICKS(13000));
-  for(int i = 0 ; i < 80 ; i++){
+  vTaskDelay(pdMS_TO_TICKS(200000));
+  for(int i = 0 ; i < 140 ; i++){
         g_CurrentThrottle -= 5;
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
         portENTER_CRITICAL();

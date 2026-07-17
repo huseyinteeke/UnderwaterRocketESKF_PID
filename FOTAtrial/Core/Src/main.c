@@ -188,9 +188,10 @@ void JumpToApplication(void)
 	uint32_t jumpAddress = *(__IO uint32_t*) (APP_ADDRESS + 4);
 	pFunction JumpToApp  = (pFunction) jumpAddress;
 
-
-		HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_RESET);
-		HAL_Delay(100);
+	for(int i = 0 ; i < 10 ; i++) {
+		HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+		HAL_Delay(1000);
+	}
 		HAL_RCC_DeInit();
 		HAL_DeInit();
 		SysTick->CTRL = 0;

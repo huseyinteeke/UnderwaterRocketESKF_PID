@@ -26,6 +26,15 @@ void PID_Reset(PID_Config_t* pid) {
 float PID_Calculate(PID_Config_t* pid, float measured_value) {
     float error = pid->setpoint - measured_value;
 
+    if(error > 80 )
+    {
+    	while(error > 80) error -= 80;
+    }
+    else if(error < -80)
+    {
+    	while(error < -80) error += 80;
+    }
+
     float P = pid->Kp * error;
 
     pid->integralError += error * pid->dt;

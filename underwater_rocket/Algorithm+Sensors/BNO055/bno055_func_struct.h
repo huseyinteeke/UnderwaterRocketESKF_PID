@@ -274,4 +274,20 @@ void BNO055_ParseGyroBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BN
 void BNO055_ParseMagBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BNO055_MagData_t *data);
 void BNO055_ParseQuatBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BNO055_QuatData_t *data);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif /* INC_BNO055_FUNC_STRUCT_H_ */

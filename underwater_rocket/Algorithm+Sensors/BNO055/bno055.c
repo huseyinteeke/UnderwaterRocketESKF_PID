@@ -82,16 +82,29 @@ static inline void BNO_Delay(BNO055Init_TypeDef_t *dev , uint32_t ms){
  */
 
 BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
-	/*
-		HAL_StatusTypeDef status = HAL_ERROR;
-	  status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress, 3,
-		  dev->i2cTimeout);
-		if (status != HAL_OK ){
-			return BNO_I2C_ERROR;
-		}
-	*/
+
+
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5 , GPIO_PIN_RESET);
+	BNO_Delay(dev, 100);
+	HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5 , GPIO_PIN_SET);
+	BNO_Delay(dev, 750);
+
+	HAL_StatusTypeDef status = HAL_ERROR;
+
+	HAL_I2C_DeInit(dev->i2cHandler);
+
+
+	if (HAL_I2C_Init(dev->i2cHandler) != HAL_OK) {
+	    return BNO_I2C_ERROR;
+	}
+
+  status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress, 3,
+	  dev->i2cTimeout);
+	if (status != HAL_OK ){
+		return BNO_I2C_ERROR;
+	}
+
 	// 1.2. Goto page 0
-	BNO_Delay(dev, 2000);
 	BNO_SetPage(dev, 0);
 
 	// 1.3. Chip ID check (0xA0)
@@ -107,9 +120,11 @@ BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
 
 	if(id != 0xA0) return BNO_ID_ERROR;
 
+	/*
 	BNO_WriteReg(dev, BNO055_SYS_TRIGGER, 0x20);
 	BNO_Delay(dev , 1000);
 
+*/
 	BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
 	BNO_Delay(dev , 100);
 	BNO_WriteReg(dev, BNO055_PWR_MODE, dev->powerMode);
@@ -407,3 +422,30 @@ void BNO055_ParseMagBuffer(BNO055Init_TypeDef_t *dev, const uint8_t *buffer, BNO
     data->mag_y = (int16_t)((buffer[3] << 8) | buffer[2]);
     data->mag_z = (int16_t)((buffer[5] << 8) | buffer[4]);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
