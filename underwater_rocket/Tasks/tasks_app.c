@@ -26,7 +26,7 @@ extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart6;
 
 Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
-
+uint8_t failsafe = 0;
 
 
 
@@ -53,16 +53,16 @@ static float lastUpdatedPWM;
  */
 
 PID_Config_t g_YawPID = {
-    .Kp = 3.0f,
+    .Kp = 5.0f,
     .Ki = 0.0f,
-    .Kd = 0.02f,
+    .Kd = 1.0f,
     .dt = 0.02f,
 
     .setpoint      = 270.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 40.0f,
+    .outputLimit   = 50.0f,
     .integralLimit = 10.0f
 
 };
@@ -70,9 +70,9 @@ PID_Config_t g_YawPID = {
 
 
 PID_Config_t g_DepthPID = {
-    .Kp = 80.0f,
+    .Kp = 10.0f,
     .Ki = 0.0f,
-    .Kd = 4.0f,
+    .Kd = 1.0f,
     .dt = 0.05f,
 
     .setpoint      = 1.0f,
@@ -80,23 +80,23 @@ PID_Config_t g_DepthPID = {
     .integralError = 0.0f,
 
     .outputLimit   = 20.0f,
-    .integralLimit = 20.0f
+    .integralLimit = 30.0f
 
 };
 
 
 PID_Config_t g_PitchPID = {
-    .Kp = 80.0f,
+    .Kp = 3.0f,
     .Ki = 0.0f,
-    .Kd = 4.0f,
-    .dt = 0.05f,
+    .Kd = 0.05f,
+    .dt = 0.02f,
 
     .setpoint      = 1.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 20.0f,
-    .integralLimit = 20.0f
+    .outputLimit   = 30.0f,
+    .integralLimit = 30.0f
 };
 
 volatile uint8_t g_ARM_STATUS = 0;
@@ -341,6 +341,8 @@ static void vBNOTask(void *pvParameters)
   };
 
 
+  ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+
   status = BNO055_Init(&localBNO);
 
   while(status != BNO_OK)
@@ -348,6 +350,8 @@ static void vBNOTask(void *pvParameters)
 	  status = BNO055_Init(&localBNO);
 	  vTaskDelay(100);
   }
+
+  failsafe = 1;
 
   portENTER_CRITICAL();
   PID_Reset(&g_YawPID);
@@ -497,14 +501,17 @@ static void vPitchPidTask(void *pvParameters){
 
      servo_cmd = PID_Calculate(&g_PitchPID, current_pitch);
 
-     msg1.channel = CH3;
-     msg1.target = servo_cmd + SERVO_CENTER_DEG;
-     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-     msg2.channel = CH4;
-     msg2.target = SERVO_CENTER_DEG - servo_cmd;
-     xQueueSend(xMaestroCmdQueue, &msg2, 0);
-     vTaskDelayUntil(&xLastWakeTime , xFrequency);
+	 msg1.channel = CH3;
+	 msg1.target = servo_cmd + SERVO_CENTER_DEG;
+	 xQueueSend(xMaestroCmdQueue, &msg1, 0);
+
+	 msg2.channel = CH4;
+	 msg2.target = SERVO_CENTER_DEG - servo_cmd;
+	 xQueueSend(xMaestroCmdQueue, &msg2, 0);
+
+	 vTaskDelayUntil(&xLastWakeTime , xFrequency);
+
   }
 }
 
@@ -548,11 +555,11 @@ static void vYawPidTask(void *pvParameters){
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
 
-    msg1.channel = CH1;
+    msg1.channel = CH0;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
-    msg2.channel = CH0;
+    msg2.channel = CH1;
     msg2.target = SERVO_CENTER_DEG - servo_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
 
@@ -584,10 +591,6 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
 
 static uint32_t g_CurrentThrottle = 1000;
 static void vEngineTask(void* parameters)
-
-
-
-
 {
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
@@ -600,7 +603,11 @@ static void vEngineTask(void* parameters)
   for(;;)
   {
     ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 140 ; i++){
+
+    while(!failsafe) vTaskDelay(200);
+
+
+    for(int i = 0 ; i < 100 ; i++){
       g_CurrentThrottle += 5;
       __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
 
@@ -610,8 +617,16 @@ static void vEngineTask(void* parameters)
 
       vTaskDelay(pdMS_TO_TICKS(20));
   }
-  vTaskDelay(pdMS_TO_TICKS(200000));
-  for(int i = 0 ; i < 140 ; i++){
+  vTaskDelay(pdMS_TO_TICKS(5000));
+
+
+
+  portENTER_CRITICAL();
+  g_YawPID.setpoint  = 90.0f;
+  portEXIT_CRITICAL();
+  vTaskDelay(pdMS_TO_TICKS(8000));
+
+  for(int i = 0 ; i < 100 ; i++){
         g_CurrentThrottle -= 5;
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
         portENTER_CRITICAL();
@@ -639,11 +654,11 @@ static void vCommRxTask(void * parameters)
       case 0x01:
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
         if(eTaskGetState(xEngineTask) == eSuspended) {
-           vTaskResume(xEngineTask);
+          vTaskResume(xEngineTask);
         } else {
           xTaskNotify(xTaskBNO_Read , 0 , eNoAction);
           vTaskDelay(2000);
-          xTaskNotify(xEngineTask, 0 , eNoAction);
+         xTaskNotify(xEngineTask, 0 , eNoAction);
         }
 
         break;
