@@ -2,6 +2,7 @@
 #define EKF_EKF_HPP_
 
 #include <stdint.h>
+#include <math.h>
 
 #include "stm32f4xx_hal.h"
 #ifndef __FPU_PRESENT
@@ -13,8 +14,6 @@
 #endif
 
 #include "arm_math.h"
-
-
 
 template <int ROWS, int COLS>
 class Matrix {
@@ -92,174 +91,222 @@ const float TOTAL_MASS = DRY_MASS + ADDED_MASS; // İvme hesabında kullanılaca
 
 const float RHO = 1000.0f;             // kg/m^3 (Tatlı su yoğunluğu)
 const float CD = 0.22f;                // Sürüklenme Katsayısı (Drag Coefficient)
-const float AREA = 0.05f;              // m^2 (İleri yön ön kesit alanı - BURAYI KENDİ ARACINA GÖRE GÜNCELLE)
+const float AREA = 0.05f;              // m^2 (İleri yön ön kesit alanı)
 const float CD_A = CD * AREA;          // Toplam aerodinamik/hidrodinamik çarpan
 
-// PWM'den İtki (Thrust) elde etmek için kullanılan polinom katsayıları
-// T = c2*u^2 + c1*u + c0
-const float C2 = 0.00015f;
-const float C1 = 0.02f;
-const float C0 = -0.5f;
-
-
-template <int STATE_DIM = 3, int MEASURE_DIM = 1>
+template <int STATE_DIM = 4, int MEASURE_DIM = 1>
 class SubESKF {
 private:
+    // State Vector
+    // x_nom(0,0): position (m)
+    // x_nom(1,0): velocity (m/s)
+    // x_nom(2,0): accelerometer bias (m/s^2)
+    // x_nom(3,0): thrust scale factor (dimensionless)
     Matrix<STATE_DIM, 1> x_nom;
     Matrix<STATE_DIM, 1> dx;
+    Matrix<STATE_DIM, STATE_DIM> P;
+    Matrix<STATE_DIM, STATE_DIM> Q;
+    Matrix<STATE_DIM, STATE_DIM> F;
+    Matrix<STATE_DIM, STATE_DIM> I;
 
+    // Measurement Covariances
+    float r_imu = 0.1f;
+    float r_mdvl = 0.5f;
+    float r_zupt = 0.01f;
+    float r_decel = 0.2f;
 
-    Matrix<STATE_DIM, STATE_DIM> P; // Hata Kovaryans Matrisi
-    Matrix<STATE_DIM, STATE_DIM> Q; // Sistem Gürültü Matrisi
-    Matrix<STATE_DIM, STATE_DIM> F; // Durum Geçiş Jacobian'ı
-    Matrix<STATE_DIM, STATE_DIM> I; // Birim Matris
+    // Thrust polynomial coefficients (T = c2*u^2 + c1*u + c0)
+    float thrust_c2 = 0.00015f;
+    float thrust_c1 = 0.02f;
+    float thrust_c0 = -0.5f;
 
-    Matrix<MEASURE_DIM, STATE_DIM> H; // Gözlem Jacobian'ı
-    Matrix<MEASURE_DIM, MEASURE_DIM> R; // Ölçüm Gürültü Matrisi
-    Matrix<MEASURE_DIM, MEASURE_DIM> S; // İnovasyon Kovaryansı
-
-    Matrix<STATE_DIM, MEASURE_DIM> K; // Kalman Kazancı
-    Matrix<MEASURE_DIM, 1> y;         // İnovasyon
-
-
-
-    // PWM sinyalini Newton cinsinden itki kuvvetine çevirir
-    float CalculateThrust(float pwm) {
-        if (pwm < 1000.0f) return 0.0f;
-        if (pwm > 2000.0f) pwm = 2000.0f;
-        float u = (pwm - 1000.0f) / 1000.0f;
-        float thrust = (C2 * u * u) + (C1 * u) + C0;
-        return (thrust > 0.0f) ? thrust : 0.0f;
+    // Ham itki hesabı, Thrust scale factor (k_T) haricinde
+    float CalculateRawThrust(float pwm) {
+        float p = pwm;
+        if (p < 1000.0f) p = 1000.0f;
+        if (p > 2000.0f) p = 2000.0f;
+        
+        float u = (p - 1000.0f) / 1000.0f;
+        float raw_thrust = thrust_c2 * u * u + thrust_c1 * u + thrust_c0;
+        
+        if (raw_thrust < 0.0f) raw_thrust = 0.0f;
+        
+        return raw_thrust;
     }
 
-    // Mevcut hıza göre Newton cinsinden sürüklenme (Drag) kuvvetini hesaplar
+    // İtki hesabı (PWM -> Newton), k_T dahil edilmiş hali
+    float CalculateThrust(float pwm) {
+        float raw_thrust = CalculateRawThrust(pwm);
+        return x_nom(3, 0) * raw_thrust; // k_T * T_raw
+    }
+
+    // Sürüklenme Kuvveti (Drag)
     float CalculateDrag(float velocity) {
-        float speed_sq = velocity * velocity;
-        float drag = 0.5f * RHO * CD_A * speed_sq;
-        // Hız negatifse drag pozitif (ileriye doğru iter), hız pozitifse drag negatif olmalıdır.
-        // Büyüklüğü hesaplayıp yönü koruyoruz.
-        return (velocity < 0) ? -drag : drag;
+        // Pozitif hız (ileriye) pozitif drag (harekete zıt), negatif hız negatif drag oluşturur.
+        // Formül: 0.5 * RHO * CD_A * v * |v|
+        return 0.5f * RHO * CD_A * velocity * fabsf(velocity);
+    }
+
+    // Sürüklenme Türevi (Drag Derivative)
+    float CalculateDragDerivative(float velocity) {
+        return RHO * CD_A * fabsf(velocity);
+    }
+
+    // Joseph Form Kalmani Güncellemesi
+    void GenericUpdate(float z_measured, float h_predicted, 
+                       const Matrix<MEASURE_DIM, STATE_DIM>& H, 
+                       const Matrix<MEASURE_DIM, MEASURE_DIM>& R_meas) {
+        // Innovation
+        Matrix<MEASURE_DIM, 1> y;
+        y(0, 0) = z_measured - h_predicted;
+        
+        // Innovation covariance: S = H*P*H^T + R
+        Matrix<MEASURE_DIM, MEASURE_DIM> S = H * P * H.transpose() + R_meas;
+        
+        // Kalman gain: K = P*H^T*S^{-1}
+        Matrix<STATE_DIM, MEASURE_DIM> K = P * H.transpose() * S.inverse();
+        
+        // Error state
+        dx = K * y;
+        
+        // Joseph form covariance update: P = (I-KH)*P*(I-KH)^T + K*R*K^T
+        Matrix<STATE_DIM, STATE_DIM> IKH = I - K * H;
+        P = IKH * P * IKH.transpose() + K * R_meas * K.transpose();
+        
+        // Inject and reset
+        x_nom = x_nom + dx;
+        for(int i = 0; i < STATE_DIM; i++) dx(i, 0) = 0.0f;
     }
 
 public:
-    SubESKF() {}
-
-    // Filtreyi başlangıç değerleriyle kurar
     void Init() {
-        for(int i = 0 ; i < STATE_DIM ; i++) {
+        for(int i = 0; i < STATE_DIM; i++) {
+            x_nom(i, 0) = 0.0f;
             dx(i, 0) = 0.0f;
-            x_nom(i, 0) = 0.0f; // Başlangıçta araç duruyor ve sıfır noktasında kabul ediliyor
-            for(int j = 0 ; j < STATE_DIM ; j++) {
+            for(int j = 0; j < STATE_DIM; j++) {
                 I(i, j) = (i == j) ? 1.0f : 0.0f;
+                P(i, j) = 0.0f;
+                Q(i, j) = 0.0f;
+                F(i, j) = (i == j) ? 1.0f : 0.0f;
             }
         }
-        // Not: P, Q ve R matrisleri set fonksiyonlarıyla dışarıdan verilmelidir.
+        // Nominal thrust scale factor starts at 1.0
+        x_nom(3, 0) = 1.0f;
     }
 
-    // =========================================================
-    // ADIM 1: TAHMİN (PREDICTION)
-    // Yüksek frekansta (örn. 100Hz) sadece motor komutları ile çalışır
-    // =========================================================
     void Predict(float current_pwm, float dt) {
-
-        // 1. Durumları Oku
         float current_v = x_nom(1, 0);
-
-        // 2. Kuvvetleri Hesapla
+        
         float thrust = CalculateThrust(current_pwm);
         float drag = CalculateDrag(current_v);
-
-        // 3. İvmeyi Bul (Newton 2. Yasa - Eklenmiş kütle ile)
+        
         float a_model = (thrust - drag) / TOTAL_MASS;
-
-        // 4. Nominal Durumu İleri Taşı (Kinematik İntegral)
-        x_nom(0, 0) += current_v * dt + 0.5f * a_model * dt * dt; // Konum
-        x_nom(1, 0) += a_model * dt;                              // Hız
-        // x_nom(2, 0) -> Bias rastgele yürüyüş (random walk) yapar, burada sabit bırakıyoruz.
-
-        // 5. F (Jacobian) Matrisini Hesapla
-        // d(Drag)/dv = rho * Cd_A * |v|
-        float drag_derivative = RHO * CD_A * current_v;
-        if (current_v < 0) drag_derivative = -drag_derivative; // Mutlak değer
-
+        
+        // State update
+        x_nom(0, 0) += current_v * dt + 0.5f * a_model * dt * dt;
+        x_nom(1, 0) += a_model * dt;
+        // Bias unchanged: x_nom(2,0)
+        // k_T unchanged: x_nom(3,0)
+        
+        // Build F Jacobian
         F = I;
-        F(0, 1) = dt; // Konumun hıza göre değişimi
-        // Hızın kendine göre değişimi: 1 - (sürtünme_türevi / toplam_kütle) * dt
-        F(1, 1) = 1.0f - (drag_derivative / TOTAL_MASS) * dt;
-
-        // 6. Kovaryans İletimi: Hata zamanla büyür (P = F*P*F^T + Q)
+        float dDdv = CalculateDragDerivative(current_v);
+        float T_raw = CalculateRawThrust(current_pwm);
+        
+        F(0, 1) = dt - 0.5f * (dDdv / TOTAL_MASS) * dt * dt; // dp/dv
+        F(0, 3) = 0.5f * (T_raw / TOTAL_MASS) * dt * dt;     // dp/dk_T
+        
+        F(1, 1) = 1.0f - (dDdv / TOTAL_MASS) * dt;           // dv/dv
+        F(1, 3) = (T_raw / TOTAL_MASS) * dt;                 // dv/dk_T
+        
+        // Covariance predict
         P = F * P * F.transpose() + Q;
     }
 
-    // =========================================================
-    // ADIM 2: GÜNCELLEME (UPDATE)
-    // IMU'dan yeni veri geldiğinde (örn. 200Hz) çalışır
-    // =========================================================
     void UpdateIMU(float measured_accel, float current_pwm) {
-
-        // 1. Dinamik modelin ne ölçmeyi BEKLEDİĞİNİ hesapla
-        float current_v = x_nom(1, 0);
         float thrust = CalculateThrust(current_pwm);
-        float drag = CalculateDrag(current_v);
+        float drag = CalculateDrag(x_nom(1, 0));
         float a_model = (thrust - drag) / TOTAL_MASS;
-
-        // Beklenen Ölçüm = Modelin Gerçek İvmesi + Tahmin Edilen Sensör Sapması (Bias)
-        float h_x = a_model + x_nom(2, 0);
-
-        // 2. İnovasyon (Gerçekten ölçülen - Beklenen)
-        Matrix<MEASURE_DIM, 1> z;
-        z(0, 0) = measured_accel;
-
-        Matrix<MEASURE_DIM, 1> h_x_mat;
-        h_x_mat(0, 0) = h_x;
-
-        y = z - h_x_mat;
-
-        // 3. H (Jacobian) Matrisini Hesapla
-        // İvme ölçümünün durumlara (konum, hız, bias) göre türevleri
-        float drag_derivative = RHO * CD_A * current_v;
-        if (current_v < 0) drag_derivative = -drag_derivative;
-
-        H(0, 0) = 0.0f; // da/dp (İvme konuma bağlı değildir)
-        H(0, 1) = -(drag_derivative / TOTAL_MASS); // da/dv (Hız arttıkça sürtünme artar, ivme düşer)
-        H(0, 2) = 1.0f; // da/dbias (Bias ölçümü 1'e 1 etkiler)
-
-        // 4. Standart Kalman Matematiği (S, K ve yeni P hesaplaması)
-        S = H * P * H.transpose() + R;
-        K = P * H.transpose() * S.inverse();
-
-        dx = K * y;               // Hata durumunu (dx) bul
-        P = (I - K * H) * P;      // Kovaryansı güncelle (Belirsizlik azalır)
-
-        // 5. Bulunan hatayı sisteme entegre et
-        InjectAndReset();
+        
+        float h_x = a_model + x_nom(2, 0); // a_model + bias
+        
+        float dDdv = CalculateDragDerivative(x_nom(1, 0));
+        float T_raw = CalculateRawThrust(current_pwm);
+        
+        Matrix<MEASURE_DIM, STATE_DIM> H;
+        H(0, 0) = 0.0f;
+        H(0, 1) = -dDdv / TOTAL_MASS;
+        H(0, 2) = 1.0f;
+        H(0, 3) = T_raw / TOTAL_MASS;
+        
+        Matrix<MEASURE_DIM, MEASURE_DIM> R_meas;
+        R_meas(0, 0) = r_imu;
+        
+        GenericUpdate(measured_accel, h_x, H, R_meas);
     }
 
-    // =========================================================
-    // ADIM 3: ENJEKSİYON VE SIFIRLAMA (INJECTION & RESET)
-    // =========================================================
-    void InjectAndReset() {
-        // Hesaplanan hata sapmalarını, nominal gerçek duruma ekleyerek düzelt
-        x_nom = x_nom + dx;
-
-        // Hata durumunu bir sonraki tahmin adımı için sıfırla
-        for(int i = 0; i < STATE_DIM; i++) {
-            dx(i, 0) = 0.0f;
-        }
+    void UpdateModelDVL(float current_pwm) {
+        float T_raw_clamped = CalculateRawThrust(current_pwm);
+        float thrust_total = x_nom(3, 0) * T_raw_clamped;
+        
+        if (thrust_total <= 0.0f) return; // İtki yoksa güncelleme yok
+        
+        float v_ss = sqrtf(2.0f * thrust_total / (RHO * CD_A));
+        float h_x = x_nom(1, 0);
+        
+        Matrix<MEASURE_DIM, STATE_DIM> H;
+        H(0, 0) = 0.0f; H(0, 1) = 1.0f; H(0, 2) = 0.0f; H(0, 3) = 0.0f;
+        
+        Matrix<MEASURE_DIM, MEASURE_DIM> R_meas;
+        R_meas(0, 0) = r_mdvl;
+        
+        GenericUpdate(v_ss, h_x, H, R_meas);
     }
 
-    // --- Getter ve Setter Metodları (Wrapper İçin İdeal) ---
-    void setQ(const Matrix<STATE_DIM, STATE_DIM>& sys_Q) { Q = sys_Q; }
-    void setR(const Matrix<MEASURE_DIM, MEASURE_DIM>& sys_R) { R = sys_R; }
-    void setP(const Matrix<STATE_DIM, STATE_DIM>& sys_P) { P = sys_P; }
+    void UpdateZUPT() {
+        float h_x = x_nom(1, 0);
+        
+        Matrix<MEASURE_DIM, STATE_DIM> H;
+        H(0, 0) = 0.0f; H(0, 1) = 1.0f; H(0, 2) = 0.0f; H(0, 3) = 0.0f;
+        
+        Matrix<MEASURE_DIM, MEASURE_DIM> R_meas;
+        R_meas(0, 0) = r_zupt;
+        
+        GenericUpdate(0.0f, h_x, H, R_meas);
+    }
 
-    // Filtrenin nihai konum, hız ve bias tahminlerini dışarı aktar
+    void UpdateDecelProfile(float v0, float time_since_cutoff) {
+        float v_predicted = v0 / (1.0f + (RHO * CD_A / (2.0f * TOTAL_MASS)) * fabsf(v0) * time_since_cutoff);
+        
+        float h_x = x_nom(1, 0);
+        
+        Matrix<MEASURE_DIM, STATE_DIM> H;
+        H(0, 0) = 0.0f; H(0, 1) = 1.0f; H(0, 2) = 0.0f; H(0, 3) = 0.0f;
+        
+        Matrix<MEASURE_DIM, MEASURE_DIM> R_meas;
+        R_meas(0, 0) = r_decel;
+        
+        GenericUpdate(v_predicted, h_x, H, R_meas);
+    }
+
+    // Setters
+    void setQ(const Matrix<STATE_DIM, STATE_DIM>& q_mat) { Q = q_mat; }
+    void setP(const Matrix<STATE_DIM, STATE_DIM>& p_mat) { P = p_mat; }
+    void setR_IMU(float r) { r_imu = r; }
+    void setR_ModelDVL(float r) { r_mdvl = r; }
+    void setThrustCoeffs(float c2, float c1, float c0) {
+        thrust_c2 = c2; thrust_c1 = c1; thrust_c0 = c0;
+    }
+
+    // Getters
     void getState(float* state_array) {
         for(int i = 0; i < STATE_DIM; i++) {
             state_array[i] = x_nom(i, 0);
         }
     }
+
+    float getPosition() { return x_nom(0, 0); }
+    float getVelocity() { return x_nom(1, 0); }
 };
 
-#endif /* SUB_ESKF_HPP_ */
-
+#endif // EKF_EKF_HPP_

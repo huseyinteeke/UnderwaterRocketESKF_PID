@@ -106,8 +106,60 @@ typedef struct __attribute((packed))__
   uint16_t header;
   uint32_t timestamp;
   float depth, ax, ay, az, pitch, roll, yaw , velocity , distance;
+  uint8_t mission_state;
   uint16_t footer;
 }TelemetryData_t;
+
+/*************************************************************************
+ * GÖREV DURUM MAKİNESİ (Mission FSM)
+ ***************************************************************************/
+typedef enum {
+    MISSION_IDLE = 0,         // Araç bekliyor, ARM bekleniyor
+    MISSION_INIT,             // Başlangıç ZUPT, sensör stabilizasyonu
+    MISSION_DIVE,             // Hedef derinliğe dalış
+    MISSION_CRUISE_OUT,       // 50m ileri seyir (sabit PWM)
+    MISSION_DECEL_OUT,        // Hedefe yaklaşma, yavaşlama
+    MISSION_STOP_OUT,         // Motor kapalı, sürüklenme ile durma
+    MISSION_ZUPT_OUT,         // Dönüş noktasında ZUPT (hız sıfırlama)
+    MISSION_TURN,             // 180° U dönüşü (Yaw PID ile)
+    MISSION_CRUISE_BACK,      // 50m geri seyir
+    MISSION_DECEL_BACK,       // Başlangıca yaklaşma, yavaşlama
+    MISSION_STOP_BACK,        // Motor kapalı, sürüklenme ile durma
+    MISSION_ZUPT_BACK,        // Varış noktasında ZUPT
+    MISSION_SURFACE,          // Yüzeye çıkış
+    MISSION_COMPLETE          // Görev tamamlandı
+} MissionState_t;
+
+/*************************************************************************
+ * NAVİGASYON PARAMETRELERİ
+ ***************************************************************************/
+#define NAV_TARGET_DISTANCE       30.0f
+#define NAV_DECEL_DISTANCE        25.0f    // Yavaşlamaya başlama mesafesi
+#define NAV_ARRIVAL_TOLERANCE     2.0f     // Varış toleransı (metre)
+
+#define NAV_CRUISE_PWM            1500     // Seyir PWM değeri (kalibrasyon sonrası güncelle)
+#define NAV_DECEL_PWM             1200     // Yavaşlama PWM değeri
+#define NAV_STOP_PWM              1000     // Motor kapalı
+
+#define NAV_ZUPT_WAIT_MS          3000     // ZUPT öncesi bekleme süresi (ms)
+#define NAV_ZUPT_VELOCITY_THRESH  0.05f    // ZUPT için hız eşiği (m/s)
+
+#define NAV_TURN_HEADING_DELTA    180.0f   // U dönüşü açısı
+#define NAV_TURN_TOLERANCE        5.0f     // Dönüş tamamlanma toleransı (derece)
+
+#define NAV_MODEL_DVL_STABLE_MS   2000     // Model-DVL için PWM kararlılık süresi (ms)
+#define NAV_DECEL_PROFILE_MAX_S   5.0f     // Yavaşlama profili maksimum süresi (saniye)
+
+#define NAV_TARGET_DEPTH          1.0f     // Hedef derinlik (metre)
+#define NAV_DEPTH_TOLERANCE       0.3f     // Derinlik toleransı (metre)
+
+/*************************************************************************
+ * MISSION TASK PARAMETRELERİ
+ ***************************************************************************/
+#define TASK_PRIORITY_MISSION     (tskIDLE_PRIORITY + 3)
+#define TASK_STACK_MISSION        1024
+#define MISSION_CONTROL_RATE_HZ   20
+#define MISSION_CONTROL_PERIOD_MS pdMS_TO_TICKS(1000 / MISSION_CONTROL_RATE_HZ)
 
 
 extern volatile uint8_t g_IMU_OK;

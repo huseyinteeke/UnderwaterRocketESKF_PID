@@ -18,13 +18,11 @@ void Callback_BNO_Error(void);
 void My_RTOS_Delay_Func(uint32_t period_ms);
 void Callback_BNO_DMA_Rx(void);
  
-void MS5837_DMA_Callback(void);
-void MS5837_DMA_Error_Callback(void);
-extern void vTempAutoTuneStarter(void *pvParameters);
- 
-// Sadece fonksiyonları tanıtıyoruz
-extern void Pitch_Relay_AutoTune_Task(void *pvParameters);
-extern void Yaw_Relay_AutoTune_Task(void *pvParameters);
+extern void MS5837_DMA_Callback(void);
+extern void MS5837_DMA_Error_Callback(void);
+
+#include "eskf_c_wrapper.h"
+
  
 /*
  * ********HAL COMMUNICATION LAYERS******************
@@ -91,8 +89,8 @@ PID_Config_t g_PitchPID = {
     .outputLimit   = 20.0f,
     .integralLimit = 20.0f
 };
- 
-volatile uint8_t g_ARM_STATUS = 0;
+ volatile uint8_t g_ARM_STATUS = 0;
+volatile MissionState_t g_MissionState = MISSION_IDLE;
  
 /*************************************************************************
  * PRIVATE HANDLES
@@ -111,7 +109,7 @@ static TaskHandle_t xTaskDepthControl;
 static TaskHandle_t xTaskMS5837;
 static TaskHandle_t xMaestroGateKeeper;
 static TaskHandle_t xCommRxTask;
-static TaskHandle_t xEngineTask;
+static TaskHandle_t xMissionTask;
 static TaskHandle_t xCommTxTask;
 static TaskHandle_t xEskfPredictTask;
 static TaskHandle_t xEskfUpdateTask;
@@ -124,58 +122,9 @@ static void vMS5837Task(void *pvParameters);
 static void vMaestroGatekeeperTask(void* pvParameters);
 static void vCommRxTask(void * parameters);
 static void vCommTxTask(void* parameters);
-static void vEngineTask(void* parameters);
+static void vMissionTask(void* parameters);
 static void vEskfPredictTask(void* parameters);
 static void vEskfUpdateTask(void* parameters);
- 
-
-#define TUNE_MODE_PITCH 1
-#define TUNE_MODE_YAW   2
- 
-// ŞU AN YAPILACAK TEST AUTOTUNE İÇİN (Burayı 1 veya 2 yapmanız yeterli):
-#define ACTIVE_TUNE_MODE TUNE_MODE_PITCH
- 
-// --- KONTROL PARAMETRELERİ ---
-#define AUTO_TUNE_TARGET_PWM 1200      // %20 motor gücü
-#define AUTO_TUNE_RELAY_AMP  15.0f     // Kanatçıklara verilecek röle genliği (+15 / -15 derece)
-#define AUTO_TUNE_CROSSINGS  7         // Toplam 0'dan geçiş sayısı (7 geçiş = 3.5 periyot yapar)
-#define AUTO_TUNE_IGNORE     2         // İlk 2 geçişi (1 tam periyot) kararsız bölge olarak yoksay
-#define ABORT_ANGLE          30.0f     // GÜVENLİK FRENİ: 30 dereceyi geçerse motoru kapat!
- 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
- 
-// =========================================================================
-// FIX: Removed the duplicate vTempAutoTuneStarter definition that existed
-// at the bottom of the original file (it's a redefinition -> compile error).
-// This single copy now suspends Depth too (the first copy did, the second
-// duplicate at the bottom didn't), and its logic is unchanged otherwise.
-// =========================================================================
- void vTempAutoTuneStarter(void *pvParameters) {
-    // 1. Aracı suya bırakmak ve yerleşmesi için 15 saniye bekle
-    vTaskDelay(pdMS_TO_TICKS(15000));
- 
-    // 2. TÜM PID VE MOTOR GÖREVLERİNİ ASKIYA AL
-    if(xTaskPitchControl != NULL)   vTaskSuspend(xTaskPitchControl);
-    if(xTaskYawRollControl != NULL) vTaskSuspend(xTaskYawRollControl);
-    if(xTaskDepthControl != NULL)   vTaskSuspend(xTaskDepthControl);
-    if(xEngineTask != NULL)         vTaskSuspend(xEngineTask);
- 
-    // 3. SEÇİM: Pitch mi, Yaw mu?
-    #if ACTIVE_TUNE_MODE == TUNE_MODE_PITCH
-        printf("\n*** PITCH TESTI BASLATILIYOR - TUM SISTEM SUSPENDED ***\n");
-        xTaskCreate(Pitch_Relay_AutoTune_Task, "PitchTune", 512, NULL, TASK_PRIORITY_PITCH_CONTROL, NULL);
-    #elif ACTIVE_TUNE_MODE == TUNE_MODE_YAW
-        printf("\n*** YAW TESTI BASLATILIYOR - PITCH PID UYANIK ***\n");
-        // Yaw testi yaparken Pitch düz durmalı, o yüzden Pitch PID'yi geri uyandırıyoruz.
-        if(xTaskPitchControl != NULL) vTaskResume(xTaskPitchControl);
-        xTaskCreate(Yaw_Relay_AutoTune_Task, "YawTune", 512, NULL, TASK_PRIORITY_YAWROLL_CONTROL, NULL);
-    #endif
- 
-    // 4. Bu başlatıcı görevin işi bitti
-    vTaskDelete(NULL);
-}
  
  
 /*
@@ -251,12 +200,12 @@ void System_Tasks_Init(void){
                    &xCommTxTask
        );
  
-       xTaskCreate(vEngineTask,
-                    "Engine Task",
-                    1024,
+       xTaskCreate(vMissionTask,
+                    "Mission Task",
+                    TASK_STACK_MISSION,
                     NULL,
-                    TASK_PID_MSG,
-                    &xEngineTask);
+                    TASK_PRIORITY_MISSION,
+                    &xMissionTask);
  
        xTaskCreate(vEskfPredictTask ,
                    "ESKF Predict",
@@ -276,14 +225,6 @@ void System_Tasks_Init(void){
  
        SubESKF_Init();
  
-       // --- GEÇİCİ AUTO TUNE BAŞLATICISINI SİSTEME EKLE ---
-       xTaskCreate(vTempAutoTuneStarter,
-                   "AutoTuneStart",
-                   256,
-                   NULL,
-                   1, // Düşük öncelik yeterli, sadece bekleyecek
-                   NULL);
- 
     vTaskStartScheduler();
 }
  
@@ -302,7 +243,14 @@ static void vEskfPredictTask(void* parameters)
  
     if (xSemaphoreTake(xEskfMutex, portMAX_DELAY) == pdTRUE) {
         SubESKF_Predict(currentpwm, dt);
+        float p = SubESKF_GetPosition();
+        float v = SubESKF_GetVelocity();
         xSemaphoreGive(xEskfMutex);
+        
+        portENTER_CRITICAL();
+        lastUpdatedDistance = p;
+        lastUpdatedVelocity = v;
+        portEXIT_CRITICAL();
     }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
@@ -312,6 +260,13 @@ static void vEskfUpdateTask(void* parameters)
 {
   static float accel_x;
   static float current_pwm;
+  
+  TickType_t last_pwm_change = 0;
+  float previous_pwm = 0;
+  
+  TickType_t cutoff_time = 0;
+  float v0_cutoff = 0.0f;
+  uint8_t is_decelerating = 0;
  
   for(;;)
   {
@@ -323,6 +278,49 @@ static void vEskfUpdateTask(void* parameters)
  
     if (xSemaphoreTake(xEskfMutex, portMAX_DELAY) == pdTRUE) {
           SubESKF_UpdateIMU(accel_x, current_pwm);
+          
+          switch(g_MissionState) {
+              case MISSION_CRUISE_OUT:
+              case MISSION_CRUISE_BACK:
+                  if (current_pwm != previous_pwm) {
+                      last_pwm_change = xTaskGetTickCount();
+                      previous_pwm = current_pwm;
+                  } else if (pdTICKS_TO_MS(xTaskGetTickCount() - last_pwm_change) >= NAV_MODEL_DVL_STABLE_MS) {
+                      SubESKF_UpdateModelDVL(current_pwm);
+                  }
+                  is_decelerating = 0;
+                  break;
+                  
+              case MISSION_TURN:
+                  // BUG-4 FIX: Dönüş sırasında da Model-DVL aktif (1100 PWM sabit)
+                  if (current_pwm != previous_pwm) {
+                      last_pwm_change = xTaskGetTickCount();
+                      previous_pwm = current_pwm;
+                  } else if (pdTICKS_TO_MS(xTaskGetTickCount() - last_pwm_change) >= NAV_MODEL_DVL_STABLE_MS) {
+                      SubESKF_UpdateModelDVL(current_pwm);
+                  }
+                  is_decelerating = 0;
+                  break;
+                  
+              case MISSION_STOP_OUT:
+              case MISSION_STOP_BACK:
+                  // Optimizasyonla bu durumlar kaldırıldı
+                  is_decelerating = 0;
+                  break;
+                  
+              case MISSION_ZUPT_OUT:
+              case MISSION_ZUPT_BACK:
+              case MISSION_INIT:
+                  // Sadece INIT'te ZUPT aktif (Araç suda başta hareketsiz)
+                  SubESKF_UpdateZUPT();
+                  is_decelerating = 0;
+                  break;
+                  
+              default:
+                  is_decelerating = 0;
+                  break;
+          }
+          
           xSemaphoreGive(xEskfMutex);
       }
   }
@@ -343,7 +341,7 @@ static void vBNOTask(void *pvParameters)
       .dmaErrorCallback = Callback_BNO_Error,
       .delayCallback    = My_RTOS_Delay_Func,
       .powerMode     = BNO_PWR_MODE_NORMAL,
-      .operationMode = BNO_MODE_NDOF,
+      .operationMode = BNO_MODE_IMU, // Motor manyetik alanından etkilenmemesi için IMU (Sadece Gyro+İvme) modu
       .externalCrystal = 0,
       .axisRemap = BNO_AXIS_REMAP_P1,
       .accelUnit = BNO_ACC_UNIT_MS2,
@@ -566,7 +564,7 @@ static void vYawPidTask(void *pvParameters){
     current_yaw =  lastUpdatedYaw; //crticical a aldım (abi sövme lütfen awdjklwadl)
     portEXIT_CRITICAL();
 
-    servo_cmd = PID_Calculate_Angle(&g_YawPID , lastUpdatedYaw);//PID calculate angle a geçirdim çünkü her ne kadar normalizasyon yapılsa da
+    servo_cmd = PID_Calculate_Angle(&g_YawPID , current_yaw);//PID calculate angle a geçirdim çünkü her ne kadar normalizasyon yapılsa da
                                                                 // 359 dan 1 e gelirken 358 derece dönücekti bu ayar olmadan 
  
     msg1.channel = CH1;
@@ -602,41 +600,171 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
 }
  
  
- 
-static uint32_t g_CurrentThrottle = 1000;
-static void vEngineTask(void* parameters)
+ static uint32_t mission_start_time = 0;
+static uint32_t state_start_time = 0;
+static float initial_yaw = 0.0f;
+static float cruise_pwm = NAV_CRUISE_PWM;
+static float turn_position = 0.0f;
+static uint32_t current_motor_pwm = NAV_STOP_PWM;  // Kademeli PWM rampalama için
+
+static void vMissionTask(void* parameters)
 {
-  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
-  portENTER_CRITICAL();
-    lastUpdatedPWM = 1000.0f;
-    portEXIT_CRITICAL();
-  vTaskDelay(pdMS_TO_TICKS(2000));
- 
-  vTaskDelay(pdMS_TO_TICKS(1000));
-  for(;;)
-  {
-    ulTaskNotifyTake(pdTRUE  , portMAX_DELAY);
-    for(int i = 0 ; i < 80 ; i++){
-      g_CurrentThrottle += 5;
-      __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
- 
-      portENTER_CRITICAL();
-      lastUpdatedPWM = (float)g_CurrentThrottle;
-      portEXIT_CRITICAL();
- 
-      vTaskDelay(pdMS_TO_TICKS(20));
-  }
-  vTaskDelay(pdMS_TO_TICKS(13000));
-  for(int i = 0 ; i < 80 ; i++){
-        g_CurrentThrottle -= 5;
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, g_CurrentThrottle);
-        portENTER_CRITICAL();
-        lastUpdatedPWM = (float)g_CurrentThrottle;
-        portEXIT_CRITICAL();
-        vTaskDelay(pdMS_TO_TICKS(1));
-  }
-  }
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = MISSION_CONTROL_PERIOD_MS;
+    
+    // Motor başlangıç
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+    __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, NAV_STOP_PWM);
+    
+    SubESKF_SetThrustCoeffs(1250.0f, 0.0f, 0.0f); // 1200 PWM -> ~50N
+    
+    for(;;)
+    {
+        switch(g_MissionState)
+        {
+            case MISSION_IDLE:
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, NAV_STOP_PWM);
+                portENTER_CRITICAL(); lastUpdatedPWM = NAV_STOP_PWM; portEXIT_CRITICAL();
+                // ARM bekleniyor... Şimdilik test için direkt INIT'e geçiyoruz:
+                // g_MissionState = MISSION_INIT;
+                // state_start_time = pdTICKS_TO_MS(xTaskGetTickCount());
+                break;
+                
+            case MISSION_INIT:
+                if(pdTICKS_TO_MS(xTaskGetTickCount()) - state_start_time > 5000) {
+                    g_MissionState = MISSION_CRUISE_OUT;
+                    cruise_pwm = NAV_CRUISE_PWM;
+                    initial_yaw = lastUpdatedYaw;
+                    current_motor_pwm = NAV_STOP_PWM; // Görev baştan başlarsa rampayı sıfırla
+                    
+                    portENTER_CRITICAL();
+                    g_YawPID.setpoint = initial_yaw;
+                    portEXIT_CRITICAL();
+                }
+                break;
+                
+            case MISSION_CRUISE_OUT:
+                // Kademeli PWM rampalaması: Her FSM döngüsünde (50ms) 10 birim artır
+                if(current_motor_pwm < (uint32_t)cruise_pwm) {
+                    current_motor_pwm += 10;
+                    if(current_motor_pwm > (uint32_t)cruise_pwm) current_motor_pwm = (uint32_t)cruise_pwm;
+                }
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, current_motor_pwm);
+                portENTER_CRITICAL(); lastUpdatedPWM = (float)current_motor_pwm; portEXIT_CRITICAL();
+                
+                if(lastUpdatedDistance >= NAV_DECEL_DISTANCE) {
+                    g_MissionState = MISSION_DECEL_OUT;
+                }
+                break;
+                
+            case MISSION_DECEL_OUT:
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, NAV_DECEL_PWM);
+                portENTER_CRITICAL(); lastUpdatedPWM = NAV_DECEL_PWM; portEXIT_CRITICAL();
+                
+                // Continuous Turn Optimizasyonu: Durmadan dönüşe geç
+                if(lastUpdatedDistance >= NAV_TARGET_DISTANCE) {
+                    g_MissionState = MISSION_TURN;
+                    
+                    // Sola dönüşü GARANTİLEMEK için hedefi önce 90 derece veriyoruz
+                    float target_yaw = initial_yaw + 90.0f;
+                    if(target_yaw >= 360.0f) target_yaw -= 360.0f;
+                    portENTER_CRITICAL(); g_YawPID.setpoint = target_yaw; portEXIT_CRITICAL();
+                }
+                break;
+                
+            case MISSION_STOP_OUT:
+            case MISSION_ZUPT_OUT:
+                // Bu durumlar atlandı
+                break;
+                
+            case MISSION_TURN:
+            {
+                // U dönüşü esnasında motor 1100 PWM'de çalışsın ki kanatçıklara su çarpsın
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1100);
+                portENTER_CRITICAL(); lastUpdatedPWM = 1100; portEXIT_CRITICAL();
+                
+                // Asıl 180 derecelik hedef
+                float final_target = initial_yaw + 180.0f;
+                if(final_target >= 360.0f) final_target -= 360.0f;
+                
+                // Şu anki PID hedefine olan hata (ilk aşamada 90, sonra 180'e dönecek)
+                float err_to_current_sp = fabsf(lastUpdatedYaw - g_YawPID.setpoint);
+                if(err_to_current_sp > 180.0f) err_to_current_sp = 360.0f - err_to_current_sp;
+                
+                // Araç sola dönüşe başladıysa ve 90 derecelik hedefin yarısını geçtiyse 
+                // artık yönü tam 180'e kitleyelim.
+                if (err_to_current_sp < 45.0f) {
+                    portENTER_CRITICAL(); g_YawPID.setpoint = final_target; portEXIT_CRITICAL();
+                }
+                
+                // Dönüşün bitip bitmediğini ASIL hedefe göre kontrol et
+                float err_to_final = fabsf(lastUpdatedYaw - final_target);
+                if(err_to_final > 180.0f) err_to_final = 360.0f - err_to_final;
+                
+                if(err_to_final < NAV_TURN_TOLERANCE) {
+                    turn_position = lastUpdatedDistance;
+                    current_motor_pwm = 1100;  // Dönüşten çıkarken motor 1100'den rampalanacak
+                    g_MissionState = MISSION_CRUISE_BACK;
+                }
+                break;
+            }
+                
+            case MISSION_CRUISE_BACK:
+            {
+                // Kademeli PWM rampalaması: Dönüş sonrası da yavaşça hızlan
+                if(current_motor_pwm < (uint32_t)cruise_pwm) {
+                    current_motor_pwm += 10;
+                    if(current_motor_pwm > (uint32_t)cruise_pwm) current_motor_pwm = (uint32_t)cruise_pwm;
+                }
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, current_motor_pwm);
+                portENTER_CRITICAL(); lastUpdatedPWM = (float)current_motor_pwm; portEXIT_CRITICAL();
+                
+                float dist_back = lastUpdatedDistance - turn_position;
+                if(dist_back >= NAV_DECEL_DISTANCE) {
+                    g_MissionState = MISSION_DECEL_BACK;
+                }
+                break;
+            }
+                
+            case MISSION_DECEL_BACK:
+            {
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, NAV_DECEL_PWM);
+                portENTER_CRITICAL(); lastUpdatedPWM = NAV_DECEL_PWM; portEXIT_CRITICAL();
+                
+                // Dönüş yolu bitince doğrudan yüzeye çık (Continuous Turn Optimizasyonu)
+                float dist_back2 = lastUpdatedDistance - turn_position;
+                if(dist_back2 >= NAV_TARGET_DISTANCE) {
+                    g_MissionState = MISSION_SURFACE;
+                }
+                break;
+            }
+                
+            case MISSION_STOP_BACK:
+            case MISSION_ZUPT_BACK:
+                // Bu durumlar atlandı
+                break;
+                
+            case MISSION_SURFACE:
+                // Araç kendi yoğunluğuyla yüzeye çıkacak, motoru kapat
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, NAV_STOP_PWM);
+                portENTER_CRITICAL();
+                lastUpdatedPWM = NAV_STOP_PWM;
+                g_DepthPID.setpoint = 0.0f;
+                portEXIT_CRITICAL();
+                
+                if(lastUpdatedDepth <= 0.15f) {
+                    g_MissionState = MISSION_COMPLETE;
+                }
+                break;
+                
+            case MISSION_COMPLETE:
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, NAV_STOP_PWM);
+                portENTER_CRITICAL(); lastUpdatedPWM = NAV_STOP_PWM; portEXIT_CRITICAL();
+                break;
+        }
+        
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    }
 }
  
  
@@ -671,18 +799,20 @@ static void vCommRxTask(void * parameters)
     switch (command){
       case 0x01:
         HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_12);
-        if(eTaskGetState(xEngineTask) == eSuspended) {
-           vTaskResume(xEngineTask);
+        if(eTaskGetState(xMissionTask) == eSuspended) {
+           vTaskResume(xMissionTask);
         } else {
           xTaskNotify(xTaskBNO_Read , 0 , eNoAction);
           vTaskDelay(2000);
-          xTaskNotify(xEngineTask, 0 , eNoAction);
+          
+          g_MissionState = MISSION_INIT;
+          state_start_time = pdTICKS_TO_MS(xTaskGetTickCount());
         }
  
         break;
  
       case 0x02: // DISARM / SUSPEND
-        vTaskSuspend(xEngineTask);
+        vTaskSuspend(xMissionTask);
         __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000); // Motoru hemen durdur
         break;
  
@@ -755,6 +885,8 @@ static void vCommTxTask(void* parameters)
     toSendlist.velocity = lastUpdatedVelocity;
     toSendlist.distance = lastUpdatedDistance;
     portEXIT_CRITICAL();
+    // BUG-2 FIX: Mission state telemetriye eklendi
+    toSendlist.mission_state = (uint8_t)g_MissionState;
  
     HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&toSendlist , sizeof(TelemetryData_t));
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
@@ -858,270 +990,7 @@ void MS5837_DMA_Callback()
   portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
  
-void MS5837_DMA_Error_Callback(){
-     SEGGER_SYSVIEW_Print("MS5837 DMA EXPLODED");
-}
- 
-// =========================================================================
-// --- GELİŞMİŞ AUTO-TUNE GÖREVLERİ (Seçmeli Mod) ---
-// FIX SUMMARY for both Pitch_Relay_AutoTune_Task and Yaw_Relay_AutoTune_Task:
-//   1) All servo targets now include SERVO_CENTER_DEG, matching how the
-//      normal PID tasks command the same servos. Previously the autotune
-//      tasks sent raw +/-15 deg (and 0.0f on abort) with no center offset,
-//      which likely drove the fins toward a mechanical extreme instead of
-//      a small symmetric wiggle around neutral -- including on the SAFETY
-//      ABORT path, which is the worst place for that bug to be.
-//   2) lastUpdatedPWM is now updated during the throttle ramp loops, so the
-//      ESKF predict task isn't working off a stale throttle value while
-//      autotune is running.
-//   3) fabs() -> fabsf() since everything here is float, not double.
-//   4) Before writing the computed Ku/Tu-derived gains into the live PID
-//      struct, they're checked for NaN/Inf/zero/negative via IsGainSetSafe().
-//      If the check fails, the gains are NOT applied and it's reported over
-//      the log instead -- otherwise a bad oscillation reading (e.g. near-zero
-//      amplitude) could divide-toward-Inf and get written straight into the
-//      live controller.
-//valla claude sorun var dedi yaptı bişeyler üstte de açıklaması
-// =========================================================================
- 
-void Pitch_Relay_AutoTune_Task(void *pvParameters) {
-    float local_max_amp = 0.0f;
-    float sum_amplitudes = 0.0f;
-    uint32_t baslangic_zamani = 0;
-    int salinim_sayaci = 0;
- 
-    portENTER_CRITICAL();
-    float onceki_pitch = lastUpdatedPitch;
-    portEXIT_CRITICAL();
- 
-    MaestroMsg_t msg1, msg2;
-    float servo_hedef_acisi = 0.0f;
- 
-    for(int i = 1000; i <= AUTO_TUNE_TARGET_PWM; i += 5) {
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, i);
-        portENTER_CRITICAL();                    // FIX: keep lastUpdatedPWM in sync
-        lastUpdatedPWM = (float)i;
-        portEXIT_CRITICAL();
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
- 
-    printf("--- PITCH AUTO TUNE BASLADI ---\n");
- 
-    while(salinim_sayaci < AUTO_TUNE_CROSSINGS) {
-        portENTER_CRITICAL();
-        float guncel_pitch = lastUpdatedPitch;
-        portEXIT_CRITICAL();
- 
-        if (fabsf(guncel_pitch) >= ABORT_ANGLE) {
-            printf("!!! TEHLIKE: PITCH 30 DERECEYI GECTI. TEST IPTAL EDILIYOR !!!\n");
-            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
-            portENTER_CRITICAL();
-            lastUpdatedPWM = 1000.0f;
-            portEXIT_CRITICAL();
-            // FIX: return fins to SERVO_CENTER_DEG (neutral), not 0.0f (which
-            // is only "neutral" if SERVO_CENTER_DEG happens to be 0 -- if
-            // your servo driver takes an absolute angle with e.g. 90 deg
-            // as center, sending 0.0f here would drive toward a hard limit
-            // exactly when you've just detected a dangerous pitch angle).
-            msg1.channel = CH3; msg1.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg1, 0);
-            msg2.channel = CH4; msg2.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg2, 0);
-            vTaskDelete(NULL);
-        }
- 
-        if(guncel_pitch > 0.0f) servo_hedef_acisi = -AUTO_TUNE_RELAY_AMP;
-        else if (guncel_pitch < 0.0f) servo_hedef_acisi = AUTO_TUNE_RELAY_AMP;
- 
-        // FIX: add SERVO_CENTER_DEG, same convention as vPitchPidTask
-        msg1.channel = CH3; msg1.target = SERVO_CENTER_DEG + servo_hedef_acisi;
-        xQueueSend(xMaestroCmdQueue, &msg1, 0);
-        msg2.channel = CH4; msg2.target = SERVO_CENTER_DEG - servo_hedef_acisi;
-        xQueueSend(xMaestroCmdQueue, &msg2, 0);
- 
-        if (fabsf(guncel_pitch) > local_max_amp) local_max_amp = fabsf(guncel_pitch);
- 
-        if ((onceki_pitch <= 0.0f && guncel_pitch > 0.0f) || (onceki_pitch >= 0.0f && guncel_pitch < 0.0f)) {
-            salinim_sayaci++;
-            if (salinim_sayaci == AUTO_TUNE_IGNORE) {
-                baslangic_zamani = HAL_GetTick();
-                local_max_amp = 0.0f;
-            }
-            else if (salinim_sayaci > AUTO_TUNE_IGNORE) {
-                sum_amplitudes += local_max_amp;
-                local_max_amp = 0.0f;
-            }
-        }
-        onceki_pitch = guncel_pitch;
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
- 
-    for(int i = AUTO_TUNE_TARGET_PWM; i >= 1000; i -= 5) {
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, i);
-        portENTER_CRITICAL();                    // FIX: keep lastUpdatedPWM in sync
-        lastUpdatedPWM = (float)i;
-        portEXIT_CRITICAL();
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
- 
-    // FIX: bring fins back to neutral once the test throttle-down completes
-    msg1.channel = CH3; msg1.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg1, 0);
-    msg2.channel = CH4; msg2.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg2, 0);
- 
-    int valid_half_periods = AUTO_TUNE_CROSSINGS - AUTO_TUNE_IGNORE;
-    float valid_full_periods = valid_half_periods / 2.0f;
-    float ortalama_genlik = sum_amplitudes / valid_half_periods;
-    float gecen_sure_sn = (HAL_GetTick() - baslangic_zamani) / 1000.0f;
- 
-    float Ku = (4.0f * AUTO_TUNE_RELAY_AMP) / (M_PI * ortalama_genlik);
-    float Tu = gecen_sure_sn / valid_full_periods;
- 
-    float newKp = 0.6f * Ku;
-    float newKi = (1.2f * Ku) / Tu;
-    float newKd = 0.075f * Ku * Tu;
- 
-    // FIX: sanity-check before writing into the live controller
-    if (ortalama_genlik > 0.5f && Tu > 0.01f && IsGainSetSafe(newKp, newKi, newKd, g_PitchPID.setpoint)) {
-        portENTER_CRITICAL();
-        g_PitchPID.Kp = newKp;
-        g_PitchPID.Ki = newKi;
-        g_PitchPID.Kd = newKd;
-        portEXIT_CRITICAL();
- 
-        printf("\n===================================\n");
-        printf("   PITCH AUTO-TUNE BASARIYLA BITTI!\n");
-        printf("===================================\n");
-        printf("Ortalama Genlik (A) : %.2f Derece\n", ortalama_genlik);
-        printf("Kritik Periyot (Tu) : %.2f Saniye\n", Tu);
-        printf("Kritik Kazanc (Ku)  : %.2f\n", Ku);
-        printf("-----------------------------------\n");
-        printf("  >> BULUNAN PID DEGERLERI <<\n");
-        printf("  Kp = %.3f\n", g_PitchPID.Kp);
-        printf("  Ki = %.3f\n", g_PitchPID.Ki);
-        printf("  Kd = %.3f\n", g_PitchPID.Kd);
-        printf("===================================\n\n");
-    } else {
-        // FIX: never silently write garbage gains -- report and bail instead
-        printf("\n!!! PITCH AUTO-TUNE REJECTED - bad measurement (amp=%.3f, Tu=%.3f) !!!\n",
-               ortalama_genlik, Tu);
-    }
- 
-    vTaskDelete(NULL);
-}
- 
-void Yaw_Relay_AutoTune_Task(void *pvParameters) {
-    float local_max_amp = 0.0f;
-    float sum_amplitudes = 0.0f;
-    uint32_t baslangic_zamani = 0;
-    int salinim_sayaci = 0;
- 
-    portENTER_CRITICAL();
-    float onceki_yaw = lastUpdatedYaw;
-    portEXIT_CRITICAL();
- 
-    MaestroMsg_t msg1, msg2;
-    float servo_hedef_acisi = 0.0f;
- 
-    for(int i = 1000; i <= AUTO_TUNE_TARGET_PWM; i += 5) {
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, i);
-        portENTER_CRITICAL();                    // FIX: keep lastUpdatedPWM in sync
-        lastUpdatedPWM = (float)i;
-        portEXIT_CRITICAL();
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
- 
-    printf("--- YAW AUTO TUNE BASLADI ---\n");
- 
-    while(salinim_sayaci < AUTO_TUNE_CROSSINGS) {
-        portENTER_CRITICAL();
-        float guncel_yaw = lastUpdatedYaw;
-        portEXIT_CRITICAL();
- 
-        if (fabsf(guncel_yaw) >= ABORT_ANGLE) {
-            printf("!!! TEHLIKE: YAW 30 DERECEYI GECTI. TEST IPTAL EDILIYOR !!!\n");
-            __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
-            portENTER_CRITICAL();
-            lastUpdatedPWM = 1000.0f;
-            portEXIT_CRITICAL();
-            // FIX: neutral = SERVO_CENTER_DEG, not 0.0f (see note in Pitch task above)
-            msg1.channel = CH1; msg1.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg1, 0);
-            msg2.channel = CH0; msg2.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg2, 0);
-            vTaskDelete(NULL);
-        }
- 
-        if(guncel_yaw > 0.0f) servo_hedef_acisi = -AUTO_TUNE_RELAY_AMP;
-        else if (guncel_yaw < 0.0f) servo_hedef_acisi = AUTO_TUNE_RELAY_AMP;
- 
-        // FIX: add SERVO_CENTER_DEG, same convention as vYawPidTask
-        msg1.channel = CH1; msg1.target = SERVO_CENTER_DEG + servo_hedef_acisi;
-        xQueueSend(xMaestroCmdQueue, &msg1, 0);
-        msg2.channel = CH0; msg2.target = SERVO_CENTER_DEG - servo_hedef_acisi;
-        xQueueSend(xMaestroCmdQueue, &msg2, 0);
- 
-        if (fabsf(guncel_yaw) > local_max_amp) local_max_amp = fabsf(guncel_yaw);
- 
-        if ((onceki_yaw <= 0.0f && guncel_yaw > 0.0f) || (onceki_yaw >= 0.0f && guncel_yaw < 0.0f)) {
-            salinim_sayaci++;
-            if (salinim_sayaci == AUTO_TUNE_IGNORE) {
-                baslangic_zamani = HAL_GetTick();
-                local_max_amp = 0.0f;
-            }
-            else if (salinim_sayaci > AUTO_TUNE_IGNORE) {
-                sum_amplitudes += local_max_amp;
-                local_max_amp = 0.0f;
-            }
-        }
-        onceki_yaw = guncel_yaw;
-        vTaskDelay(pdMS_TO_TICKS(10));
-    }
- 
-    for(int i = AUTO_TUNE_TARGET_PWM; i >= 1000; i -= 5) {
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, i);
-        portENTER_CRITICAL();                    // FIX: keep lastUpdatedPWM in sync
-        lastUpdatedPWM = (float)i;
-        portEXIT_CRITICAL();
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
- 
-    // FIX: bring fins back to neutral once the test throttle-down completes
-    msg1.channel = CH1; msg1.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg1, 0);
-    msg2.channel = CH0; msg2.target = SERVO_CENTER_DEG; xQueueSend(xMaestroCmdQueue, &msg2, 0);
- 
-    int valid_half_periods = AUTO_TUNE_CROSSINGS - AUTO_TUNE_IGNORE;
-    float valid_full_periods = valid_half_periods / 2.0f;
-    float ortalama_genlik = sum_amplitudes / valid_half_periods;
-    float gecen_sure_sn = (HAL_GetTick() - baslangic_zamani) / 1000.0f;
- 
-    float Ku = (4.0f * AUTO_TUNE_RELAY_AMP) / (M_PI * ortalama_genlik);
-    float Tu = gecen_sure_sn / valid_full_periods;
- 
-    float newKp = 0.6f * Ku;
-    float newKi = (1.2f * Ku) / Tu;
-    float newKd = 0.075f * Ku * Tu;
- 
-    // FIX: sanity-check before writing into the live controller
-    if (ortalama_genlik > 0.5f && Tu > 0.01f && IsGainSetSafe(newKp, newKi, newKd, g_YawPID.setpoint)) {
-        portENTER_CRITICAL();
-        g_YawPID.Kp = newKp;
-        g_YawPID.Ki = newKi;
-        g_YawPID.Kd = newKd;
-        portEXIT_CRITICAL();
- 
-        printf("\n===================================\n");
-        printf("    YAW AUTO-TUNE BASARIYLA BITTI!\n");
-        printf("===================================\n");
-        printf("Ortalama Genlik (A) : %.2f Derece\n", ortalama_genlik);
-        printf("Kritik Periyot (Tu) : %.2f Saniye\n", Tu);
-        printf("Kritik Kazanc (Ku)  : %.2f\n", Ku);
-        printf("-----------------------------------\n");
-        printf("  >> BULUNAN PID DEGERLERI <<\n");
-        printf("  Kp = %.3f\n", g_YawPID.Kp);
-        printf("  Ki = %.3f\n", g_YawPID.Ki);
-        printf("  Kd = %.3f\n", g_YawPID.Kd);
-        printf("===================================\n\n");
-    } else {
-        // FIX: never silently write garbage gains -- report and bail instead
-        printf("\n!!! YAW AUTO-TUNE REJECTED - bad measurement (amp=%.3f, Tu=%.3f) !!!\n",
-               ortalama_genlik, Tu);
-    }
- 
-    vTaskDelete(NULL);
+void MS5837_DMA_Error_Callback()
+{
+    SEGGER_SYSVIEW_Print("MS5837 DMA EXPLODED");
 }
