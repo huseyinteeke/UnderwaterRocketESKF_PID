@@ -264,9 +264,7 @@ static void vEskfUpdateTask(void* parameters)
   TickType_t last_pwm_change = 0;
   float previous_pwm = 0;
   
-  TickType_t cutoff_time = 0;
-  float v0_cutoff = 0.0f;
-  uint8_t is_decelerating = 0;
+
  
   for(;;)
   {
@@ -288,7 +286,6 @@ static void vEskfUpdateTask(void* parameters)
                   } else if (pdTICKS_TO_MS(xTaskGetTickCount() - last_pwm_change) >= NAV_MODEL_DVL_STABLE_MS) {
                       SubESKF_UpdateModelDVL(current_pwm);
                   }
-                  is_decelerating = 0;
                   break;
                   
               case MISSION_TURN:
@@ -299,13 +296,10 @@ static void vEskfUpdateTask(void* parameters)
                   } else if (pdTICKS_TO_MS(xTaskGetTickCount() - last_pwm_change) >= NAV_MODEL_DVL_STABLE_MS) {
                       SubESKF_UpdateModelDVL(current_pwm);
                   }
-                  is_decelerating = 0;
                   break;
                   
               case MISSION_STOP_OUT:
               case MISSION_STOP_BACK:
-                  // Optimizasyonla bu durumlar kaldırıldı
-                  is_decelerating = 0;
                   break;
                   
               case MISSION_ZUPT_OUT:
@@ -313,11 +307,9 @@ static void vEskfUpdateTask(void* parameters)
               case MISSION_INIT:
                   // Sadece INIT'te ZUPT aktif (Araç suda başta hareketsiz)
                   SubESKF_UpdateZUPT();
-                  is_decelerating = 0;
                   break;
                   
               default:
-                  is_decelerating = 0;
                   break;
           }
           
@@ -498,7 +490,7 @@ static void vPitchPidTask(void *pvParameters){
   float current_pitch;
   float servo_cmd;
  
-  TickType_t xLastWakeTime = get_tick_count();//çöp değer alıyodu artık tick count u alıyor
+  TickType_t xLastWakeTime = xTaskGetTickCount();//çöp değer alıyodu artık tick count u alıyor
 
   const TickType_t xFrequency = PITCH_CONTROL_PERIOD_MS; // 2 kez pdms to tick yapıyo
  
@@ -600,7 +592,7 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
 }
  
  
- static uint32_t mission_start_time = 0;
+
 static uint32_t state_start_time = 0;
 static float initial_yaw = 0.0f;
 static float cruise_pwm = NAV_CRUISE_PWM;
