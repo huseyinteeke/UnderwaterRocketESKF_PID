@@ -8,6 +8,7 @@
 #include "main.h"
 #include "tasks_config.h"
 #include "stdio.h"
+#include "math.h"
 
 void Callback_BNO_Error(void);
 void My_RTOS_Delay_Func(uint32_t period_ms);
@@ -39,9 +40,20 @@ static float lastUpdatedRoll;
 static float lastUpdatedAccelx;
 static float lastUpdatedAccely;
 static float lastUpdatedAccelz;
-static float lastUpdatedVelocity;
-static float lastUpdatedDistance;
+
+static float lastUpdatedVelocityx;
+static float lastUpdatedVelocityy;
+static float lastUpdatedVelocityz;
+
+static float lastUpdatedDistancex;
+static float lastUpdatedDistancey;
+static float lastUpdatedDistancez;
+
+static float lastUpdatedStern;
+static float lastUpdatedRudder;
+
 static float lastUpdatedPWM;
+static float lastUpdatedRPM;
 
 
 /*
@@ -303,8 +315,8 @@ static void vEskfUpdateTask(void* parameters)
 
     portENTER_CRITICAL();
 
-    lastUpdatedDistance = state_arr[0];
-    lastUpdatedVelocity = state_arr[1];
+    lastUpdatedDistancex = state_arr[0];
+    lastUpdatedVelocityx = state_arr[1];
 
     portEXIT_CRITICAL();
   }
@@ -490,7 +502,7 @@ static void vPitchPidTask(void *pvParameters){
   static MaestroMsg_t msg2;
   float current_pitch;
   float servo_cmd;
-
+#define PITCHCHANNELS 0b1100
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
 
@@ -545,7 +557,7 @@ static void vDepthPidTask(void *pvParameters)
 static void vYawPidTask(void *pvParameters){
   static MaestroMsg_t msg1;
   static MaestroMsg_t msg2;
-
+#define YAWCHANNELS 0b0011
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
 
@@ -579,6 +591,14 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
         while (xQueueReceive(xMaestroCmdQueue, &msg, portMAX_DELAY) == pdPASS) {
             Maestro_SetTarget(&ServoDriver, msg.channel, msg.target, command);
             if(ServoDriver.huart->gState == HAL_UART_STATE_READY) {
+
+                if(msg.channel && YAWCHANNELS) {
+                  lastUpdatedRudder = fabs(SERVO_CENTER_DEG - msg.target);
+                }else if(msg.channel && PITCHCHANNELS)
+                {
+                  lastUpdatedStern = fabs(SERVO_CENTER_DEG - msg.target);
+                }
+
                 HAL_UART_Transmit_DMA(ServoDriver.huart, command, CMD_LEN);
                 ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
             }
@@ -712,8 +732,17 @@ static void vCommTxTask(void* parameters)
     toSendlist.pitch = lastUpdatedPitch;
     toSendlist.roll = lastUpdatedRoll;
     toSendlist.yaw = lastUpdatedYaw;
-    toSendlist.velocity = lastUpdatedVelocity;
-    toSendlist.distance = lastUpdatedDistance;
+    toSendlist.velocityx = lastUpdatedVelocityx;
+    toSendlist.velocityy = lastUpdatedVelocityy;
+    toSendlist.velocityz = lastUpdatedVelocityz;
+    toSendlist.distancex = lastUpdatedDistancex;
+    toSendlist.distancey = lastUpdatedDistancey;
+    toSendlist.distancez = lastUpdatedDistancez;
+    toSendlist.rpm       = lastUpdatedRPM;
+    toSendlist.rudderangle  = lastUpdatedRudder;
+    toSendlist.sternangle   = lastUpdatedStern;
+    toSendlist.rpm       = lastUpdatedRPM;
+
     portEXIT_CRITICAL();
 
     HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&toSendlist , sizeof(TelemetryData_t));
