@@ -559,13 +559,13 @@ static void vYawPidTask(void *pvParameters){
   static MaestroMsg_t msg2;
 #define YAWCHANNELS 0b0011
   TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+  const TickType_t xFrequency = pdMS_TO_TICKS(YAW_CONTROL_PERIOD_MS);
 
   float servo_cmd;
   xLastWakeTime = xTaskGetTickCount();
 
   for(;;){
-    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
+    servo_cmd = PID_Calculate_Angle(&g_YawPID , lastUpdatedYaw);
 
     msg1.channel = CH0;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;

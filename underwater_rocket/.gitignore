@@ -1,3 +1,15 @@
 
 mx.scratch
-!.settings
+.mxproject
+
+
+.settings/
+.vscode/
+
+compile_commands.json
+build/
+cmake-build-*/
+.cmake/
+
+.clangd/
+binaries/

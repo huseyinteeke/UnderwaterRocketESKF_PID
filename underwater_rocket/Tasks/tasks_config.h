@@ -54,12 +54,12 @@
 #define VELOCITY_RATE_HZ                50
 #define DEPTH_CONTROL_RATE_HZ           20
 
-#define BNO_READ_PERIOD_MS          pdMS_TO_TICKS(1000 / BNO_READ_RATE_HZ)
-#define YAW_CONTROL_PERIOD_MS       pdMS_TO_TICKS(1000 / YAW_CONTROL_RATE_HZ)
-#define PITCH_CONTROL_PERIOD_MS     pdMS_TO_TICKS(1000 / PITCH_CONTROL_RATE_HZ)
-#define MS5837_READ_PERIOD_MS       pdMS_TO_TICKS(1000 / MS5837_READ_RATE_HZ)
-#define VELOCITY_PERIOD_MS          pdMS_TO_TICKS(1000 / VELOCITY_RATE_HZ)
-#define DEPTH_CONTROL_PERIOD_MS     pdMS_TO_TICKS(1000 / DEPTH_CONTROL_RATE_HZ)
+#define BNO_READ_PERIOD_MS          (1000 / BNO_READ_RATE_HZ)
+#define YAW_CONTROL_PERIOD_MS       (1000 / YAW_CONTROL_RATE_HZ)
+#define PITCH_CONTROL_PERIOD_MS     (1000 / PITCH_CONTROL_RATE_HZ)
+#define MS5837_READ_PERIOD_MS       (1000 / MS5837_READ_RATE_HZ)
+#define VELOCITY_PERIOD_MS          (1000 / VELOCITY_RATE_HZ)
+#define DEPTH_CONTROL_PERIOD_MS     (1000 / DEPTH_CONTROL_RATE_HZ)
 /*************************************************************************
  * QUEUE SIZES
  ***************************************************************************/
@@ -101,13 +101,13 @@ typedef struct
   float target;
 }MaestroMsg_t;
 
-typedef struct __attribute((packed))__
+typedef struct
 {
-  uint16_t header;
   uint32_t timestamp;
   float depth, ax, ay, az, pitch, roll, yaw , velocityx , velocityy , velocityz , distancex , distancey , distancez , rpm , rudderangle , sternangle;
+  uint16_t header;
   uint16_t footer;
-}TelemetryData_t;
+} __attribute__((packed)) TelemetryData_t;
 
 
 extern volatile uint8_t g_IMU_OK;
