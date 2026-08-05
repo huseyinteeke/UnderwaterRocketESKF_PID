@@ -592,7 +592,7 @@ void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
-    if(hi2c->Instance == I2C2)
+    if(hi2c->Instance == I2C1)
     {
         Callback_BNO_DMA_Rx();
     }

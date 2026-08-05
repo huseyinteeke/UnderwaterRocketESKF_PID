@@ -609,7 +609,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
        }
 }
 
-// 3. MASTER YAZMA (MS5837 Komut Gönderme İçin) - BUNU EKLE!
+
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c)
 {
     if(hi2c->Instance == I2C1) // MS5837

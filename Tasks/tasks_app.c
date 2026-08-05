@@ -63,27 +63,8 @@ Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
   #define BUZZER_PORT GPIOE
   #define ACIL_BUTON      GPIO_PIN_2
   #define ACIL_BUTON_PORT GPIOA
-  BNO055Init_TypeDef_t localBNO = {
-    .i2cHandler = &hi2c1,
-    .i2cAddress = BNO055_I2C_ADDR_LOW,
-    .i2cTimeout = 10,
-    .dmaRxCallback    = Callback_BNO_DMA_Rx,
-    .dmaErrorCallback = Callback_BNO_Error,
-    .delayCallback    = My_RTOS_Delay_Func,
-    .powerMode     = BNO_PWR_MODE_NORMAL,
-    .operationMode = BNO_MODE_IMU,
-    .externalCrystal = 0,
-    .axisRemap = BNO_AXIS_REMAP_P1,
-    .accelUnit = BNO_ACC_UNIT_MS2,
-    .gyroUnit  = BNO_GYRO_UNIT_DPS,
-    .eulerUnit = BNO_EULER_UNIT_DEG,
-    .tempUnit  = BNO_TEMP_UNIT_C,
-    .useStoredCalibration = 1,
-    .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
-  };
-    Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
 
-
+  Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
 
 #elif defined(HW_FOTA)
 
@@ -432,17 +413,33 @@ static void vPitchTask(void *pvParameters){
  ******************************************************************************/
 static void vBNOTask(void *pvParameters)
 {
-  BNO_Status_t status;
-
+  BNO_Status_t status = BNO_TIMEOUT;
+  BNO055Init_TypeDef_t localBNO = {
+    .i2cHandler = &hi2c1,
+    .i2cAddress = BNO055_I2C_ADDR_LOW,
+    .i2cTimeout = 10,
+    .dmaRxCallback    = Callback_BNO_DMA_Rx,
+    .dmaErrorCallback = Callback_BNO_Error,
+    .delayCallback    = My_RTOS_Delay_Func,
+    .powerMode     = BNO_PWR_MODE_NORMAL,
+    .operationMode = BNO_MODE_IMU,
+    .externalCrystal = 0,
+    .axisRemap = BNO_AXIS_REMAP_P1,
+    .accelUnit = BNO_ACC_UNIT_MS2,
+    .gyroUnit  = BNO_GYRO_UNIT_DPS,
+    .eulerUnit = BNO_EULER_UNIT_DEG,
+    .tempUnit  = BNO_TEMP_UNIT_C,
+    .useStoredCalibration = 0,
+    .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
+  };
 
   ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-  status = BNO055_Init(&localBNO);
 
 
-  if(status != BNO_OK)
+  while(status != BNO_OK)
   {
-      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-      vTaskDelete(NULL);
+      HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+      status = BNO055_Init(&localBNO);
   }
   portENTER_CRITICAL();
   PID_Reset(&g_YawPID);
@@ -505,10 +502,17 @@ static void vMS5837Task(void *pvParameters){
     static MS5837_t localMS5837;
     localMS5837.Delay = My_RTOS_Delay_Func;
 
+    #ifdef HW_PCB
+    if(MS5837_Init(&localMS5837, &hi2c3) != HAL_OK){
+            SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
+            vTaskDelete(NULL);
+    }
+    #elif defined(HW_PERTINAKS)
     if(MS5837_Init(&localMS5837, &hi2c1) != HAL_OK){
             SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
             vTaskDelete(NULL);
     }
+    #endif
 
     DepthData_t tx_Depth;
     uint8_t cmd_d1   = MS5837_CONVERT_BASE | D1 | OSR_4096;
