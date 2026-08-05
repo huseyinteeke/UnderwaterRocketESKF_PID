@@ -1,0 +1,19 @@
+# Build klasörleri ve geçici çıktıları
+/build/
+build/
+**/build/
+**/build/*
+
+# Donanım hedeflerine ait build dizinleri
+/hardware_targets/FOTA/build/
+/hardware_targets/pcb/build/
+/hardware_targets/pertinanks/build/
+hardware_targets/FOTA/build/*
+hardware_targets/pcb/build/*
+hardware_targets/pertinanks/build/*
+
+# IDE ve CubeIDE ayar dosyaları
+/hardware_targets/pcb/.settings/
+/hardware_targets/pertinanks/.settings/
+hardware_targets/pcb/.settings/*
+hardware_targets/pertinanks/.settings/*

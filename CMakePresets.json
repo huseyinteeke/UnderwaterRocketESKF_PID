@@ -1,0 +1,103 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "base-preset",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "C:/ST/STM32CubeIDE_2.2.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740/tools/bin/arm-none-eabi-gcc.exe",
+                "CMAKE_CXX_COMPILER": "C:/ST/STM32CubeIDE_2.2.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740/tools/bin/arm-none-eabi-g++.exe",
+                "CMAKE_MAKE_PROGRAM": "C:/ST/STM32CubeIDE_2.2.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.ninja.win32_1.1.200.202606260906/tools/bin/ninja.exe",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": true
+            }
+        },
+        {
+            "name": "pcb-debug",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/pcb_debug",
+            "toolchainFile": "${sourceDir}/hardware_targets/pcb/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "pcb",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "pcb-release",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/pcb_release",
+            "toolchainFile": "${sourceDir}/hardware_targets/pcb/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "pcb",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "fota-debug",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/fota_debug",
+            "toolchainFile": "${sourceDir}/hardware_targets/fota/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "fota",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "fota-release",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/fota_release",
+            "toolchainFile": "${sourceDir}/hardware_targets/fota/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "fota",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "pertinaks-debug",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/pertinaks_debug",
+            "toolchainFile": "${sourceDir}/hardware_targets/pertinanks/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "pertinaks",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "pertinaks-release",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/pertinaks_release",
+            "toolchainFile": "${sourceDir}/hardware_targets/pertinanks/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "pertinaks",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "pcb-debug",
+            "configurePreset": "pcb-debug"
+        },
+        {
+            "name": "pcb-release",
+            "configurePreset": "pcb-release"
+        },
+        {
+            "name": "fota-debug",
+            "configurePreset": "fota-debug"
+        },
+        {
+            "name": "fota-release",
+            "configurePreset": "fota-release"
+        },
+        {
+            "name": "pertinaks-debug",
+            "configurePreset": "pertinaks-debug"
+        },
+        {
+            "name": "pertinaks-release",
+            "configurePreset": "pertinaks-release"
+        }
+    ]
+}

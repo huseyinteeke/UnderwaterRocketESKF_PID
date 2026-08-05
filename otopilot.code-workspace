@@ -1,0 +1,28 @@
+{
+  "folders": [
+    {
+      "name": "SARA",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.buildDirectory": "${workspaceFolder}/build/${buildKit}-${command:cmake.activeBuildType}",
+    "cmake.configureOnOpen": true,
+    // Clangd veya C++ Intellisense ayarları için altyapı
+    "C_Cpp.intelliSenseEngine": "disabled", 
+    "files.exclude": {
+      "**/.git": true,
+      "**/build": false
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "ms-vscode.cpptools",
+      "ms-vscode.cmake-tools",
+      "llvm-vs-code-extensions.vscode-clangd", // Clangd (Hızlı kod tamamlama ve hata gösterimi için)
+      "marus25.cortex-debug",                  // STM32 / ARM Cortex-M debug için
+      "twxs.cmake"                             // CMake sözdizimi desteği
+    ]
+  }
+}

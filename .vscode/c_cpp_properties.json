@@ -1,0 +1,12 @@
+{
+    "configurations": [
+        {
+            "name": "STM32_Embedded",
+            "compileCommands": "${command:cmake.buildDirectory}/compile_commands.json",
+            "intelliSenseMode": "gcc-arm",
+            "cStandard": "c11",
+            "cppStandard": "c++17"
+        }
+    ],
+    "version": 4
+}
