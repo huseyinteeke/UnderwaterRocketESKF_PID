@@ -23,14 +23,14 @@
 ###############TASK PRIORITIES################################
 */
 #define TASK_PRIORITY_BNO_READ        (tskIDLE_PRIORITY + 2)
-#define TASK_PID_MSG                  (tskIDLE_PRIORITY + 4)
+#define TASK_PID_MSG                  (tskIDLE_PRIORITY + 3)
 
 #define TASK_PRIORITY_YAWROLL_CONTROL (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_PITCH_CONTROL   (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_MS5837_READ     (tskIDLE_PRIORITY + 2)
-#define TASK_PRIORITY_Comm            (tskIDLE_PRIORITY + 4)
+#define TASK_PRIORITY_Comm            (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_VELOCITY        (tskIDLE_PRIORITY + 2)
-#define TASK_PRIORITY_ESKF            (tskIDLE_PRIORITY + 4)
+#define TASK_PRIORITY_ESKF            (tskIDLE_PRIORITY + 3)
 
 /*
  ############TASK STACK SIZES#################################3

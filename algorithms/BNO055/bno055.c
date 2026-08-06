@@ -7,6 +7,7 @@
 
 
 #include "bno055_func_struct.h"
+#include "stm32f4xx_hal_gpio.h"
 #include "stm32f4xx_hal_i2c.h"
 
 
@@ -19,34 +20,31 @@
 
 static HAL_StatusTypeDef BNO_WriteReg(BNO055Init_TypeDef_t *dev, uint8_t reg,
 		uint8_t value) {
-    HAL_I2C_Mem_Write_DMA(dev->i2cHandler, dev->i2cAddress, reg ,
-      1 , &value , 1 );
-    dev->notifyCallback();
+    HAL_I2C_Mem_Write(dev->i2cHandler, dev->i2cAddress, reg ,
+      1 , &value , 1 , dev->i2cTimeout );
     return HAL_OK;
 }
 
 static uint8_t BNO_ReadReg(BNO055Init_TypeDef_t *dev, uint8_t reg) {
-	uint8_t value = 0;
-	HAL_I2C_Mem_Read_DMA(dev->i2cHandler, dev->i2cAddress, reg , 1,
-	    &value, 1 );
-    dev->notifyCallback();
-	return HAL_OK;
+	static uint8_t value = 0;
+	HAL_I2C_Mem_Read(dev->i2cHandler, dev->i2cAddress, reg , 1,
+	    &value, 1 , dev->i2cTimeout);
+	return value;
 }
 
 static HAL_StatusTypeDef BNO_WriteMulti(BNO055Init_TypeDef_t *dev, uint8_t reg,
 		uint8_t *data, uint8_t len) {
 
-    HAL_I2C_Mem_Write_DMA(dev->i2cHandler, dev->i2cAddress, reg, 1, data,
-      len);
-    dev->notifyCallback();
+    HAL_I2C_Mem_Write(dev->i2cHandler, dev->i2cAddress, reg, 1, data,
+      len , dev->i2cTimeout);
     return HAL_OK;
     }
 
 
 static HAL_StatusTypeDef BNO_ReadMulti(BNO055Init_TypeDef_t *dev, uint8_t reg,
 		uint8_t *data, uint8_t len){
-  return HAL_I2C_Mem_Read_DMA(dev->i2cHandler , dev->i2cAddress , reg ,
-      1 , data , len );
+    return HAL_I2C_Mem_Read_DMA(dev->i2cHandler , dev->i2cAddress , reg ,
+        1 , data , len );
 }
 
 
@@ -93,11 +91,23 @@ BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
   HAL_StatusTypeDef status = HAL_ERROR;
 
 
-	// 1.2. Goto page 0
-	BNO_SetPage(dev, 0);
+  #ifdef HW_PCB
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, RESET);
+  BNO_Delay(dev , 20); 
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, SET);
+  BNO_Delay(dev , 700);
+  #endif
 
+  BNO_Delay(dev , 650);
+
+  status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress , 3, 100);
+
+	// 1.2. Goto page 0
+ 	BNO_SetPage(dev, 0);
+  BNO_Delay(dev, 10);
 	// 1.3. Chip ID check (0xA0)
-	uint8_t id = BNO_ReadReg(dev, BNO055_CHIP_ID);
+	
+  uint8_t id = BNO_ReadReg(dev, BNO055_CHIP_ID);
 	BNO_Delay(dev , 20);
 
 	for(int i = 0 ; i < 10 ; i ++){
@@ -106,6 +116,7 @@ BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
 		id = BNO_ReadReg(dev, BNO055_CHIP_ID);
 		BNO_Delay(dev , 30);
 	}
+    
 
 	if(id != 0xA0) return BNO_ID_ERROR;
 

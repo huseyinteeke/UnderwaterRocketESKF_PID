@@ -575,10 +575,7 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c)
         MS5837_DMA_Callback();
     }
 
-    else if(hi2c == &hi2c1)
-       {
-           Callback_BNO_DMA_Rx();
-       }
+
 }
 
 // 3. MASTER YAZMA (MS5837 Komut Gönderme İçin)
@@ -598,6 +595,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
         Callback_BNO_DMA_Rx();
     }
 }
+
 
 
 

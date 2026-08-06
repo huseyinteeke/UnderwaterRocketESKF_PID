@@ -4,6 +4,11 @@
  *  Created on: Jan 23, 2026
  *      Author: husey
  */
+ #include "stm32f407xx.h"
+#include "stm32f4xx_hal.h"
+#include "stm32f4xx_hal_def.h"
+ #include "stm32f4xx_hal_i2c.h"
+
 #include "pid.h"
 #include "tasks_config.h"
 #include "eskf_c_wrapper.h"
@@ -37,24 +42,23 @@ void Notify_wrapper(void);
   extern TIM_HandleTypeDef htim2;
   extern UART_HandleTypeDef huart6;
   BNO055Init_TypeDef_t localBNO = {
-    .i2cHandler = &hi2c2,
-    .i2cAddress = BNO055_I2C_ADDR_LOW,
-    .i2cTimeout = 10,
-    .dmaRxCallback    = Callback_BNO_DMA_Rx,
-    .dmaErrorCallback = Callback_BNO_Error,
-    .delayCallback    = My_RTOS_Delay_Func,
-    .notifyCallback = Notify_wrapper,
-    .powerMode     = BNO_PWR_MODE_NORMAL,
-    .operationMode = BNO_MODE_IMU,
-    .externalCrystal = 0,
-    .axisRemap = BNO_AXIS_REMAP_P1,
-    .accelUnit = BNO_ACC_UNIT_MS2,
-    .gyroUnit  = BNO_GYRO_UNIT_DPS,
-    .eulerUnit = BNO_EULER_UNIT_DEG,
-    .tempUnit  = BNO_TEMP_UNIT_C,
-    .useStoredCalibration = 1,
-    .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
-};
+      .i2cHandler = &hi2c2,
+      .i2cAddress = BNO055_I2C_ADDR_LOW,
+      .i2cTimeout = 10,
+      .dmaRxCallback    = Callback_BNO_DMA_Rx,
+      .dmaErrorCallback = Callback_BNO_Error,
+      .delayCallback    = My_RTOS_Delay_Func,
+      .powerMode     = BNO_PWR_MODE_NORMAL,
+      .operationMode = BNO_MODE_IMU,
+      .externalCrystal = 0,
+      .axisRemap = BNO_AXIS_REMAP_P1,
+      .accelUnit = BNO_ACC_UNIT_MS2,
+      .gyroUnit  = BNO_GYRO_UNIT_DPS,
+      .eulerUnit = BNO_EULER_UNIT_DEG,
+      .tempUnit  = BNO_TEMP_UNIT_C,
+      .useStoredCalibration = 1,
+      .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
+  };
 Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
 
 
@@ -533,6 +537,40 @@ static void vPitchTask(void *pvParameters){
   }
 }
 
+void I2C_Clear(GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin, GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    
+    GPIO_InitStruct.Pin = SCL_Pin | SDA_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    
+    HAL_GPIO_Init(SCL_Port, &GPIO_InitStruct); // Not: Aynı porttalarsa tek seferde, farklı porttalarsa ayrı ayrı init edilmeli
+    
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
+    vTaskDelay(2);
+
+    for (int i = 0; i < 9; i++) 
+    {
+        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_RESET);
+        vTaskDelay(2); // vTaskDelay milisaniye cinsinden gecikme sağlar
+        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+        vTaskDelay(2);
+        
+        if (HAL_GPIO_ReadPin(SDA_Port, SDA_Pin) == GPIO_PIN_SET) {
+            break;
+        }
+    }
+
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_RESET);
+    vTaskDelay(2);
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+    vTaskDelay(2);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
+    vTaskDelay(2);
+}
 
 
 
@@ -548,12 +586,31 @@ static void vBNOTask(void *pvParameters)
 {
   BNO_Status_t status = BNO_TIMEOUT;
 
-  ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+  //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+  status = BNO055_Init(&localBNO);
 
   while(status != BNO_OK)
   {
       HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
+      HAL_I2C_DeInit(localBNO.i2cHandler);
+      #ifdef HW_PERTINAKS
+      I2C_Clear(GPIOB , GPIO_PIN_10 , GPIOB , GPIO_PIN_11);
+      #elif HW_PCB
+      I2C_Clear(GPIOB , GPIO_PIN_6 , GPIOB , GPIO_PIN_7);
+      #endif
+
+      localBNO.i2cHandler->State = HAL_I2C_STATE_READY;
+      localBNO.i2cHandler->ErrorCode = HAL_I2C_ERROR_NONE;
+      
+      if(localBNO.i2cHandler->hdmatx != NULL) {
+          localBNO.i2cHandler->hdmatx->State = HAL_DMA_STATE_READY;
+      }
+      if(localBNO.i2cHandler->hdmarx != NULL) {
+          localBNO.i2cHandler->hdmarx->State = HAL_DMA_STATE_READY;
+      }
+      
+      HAL_I2C_Init(localBNO.i2cHandler);
       status = BNO055_Init(&localBNO);
   }
   portENTER_CRITICAL();
@@ -953,7 +1010,7 @@ void Callback_BNO_DMA_Rx(void)
     vTaskNotifyGiveFromISR(xTaskBNO_Read , &xHigherPriorityTaskWoken);
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
   }
-  }
+}
 
 void Callback_BNO_Error(void)
 {
