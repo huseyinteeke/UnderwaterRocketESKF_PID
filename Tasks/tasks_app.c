@@ -844,22 +844,23 @@ static void vCommandHandler(void* parameters)
                 break;
 
             case TURN:
-                portENTER_CRITICAL(); // Yazım hatası düzeltildi
-                g_YawPID.setpoint = command.value;  
+                portENTER_CRITICAL(); 
+                g_YawPID.setpoint = command.value; 
+                lastUpdatedDistancex = 5; 
+                g_EnginePID.setpoint = 0;
                 portEXIT_CRITICAL();
                 break;
 
             case DEPTH:
-                portENTER_CRITICAL(); // Yazım hatası düzeltildi
+                portENTER_CRITICAL(); 
                 g_DepthPID.setpoint = command.value;  
                 portEXIT_CRITICAL();
                 break;
 
             case GO_TO:
-                // TODO: İleri hareket komutu
-                // Örnek kullanım:
-                // g_CurrentThrottle = command.value;
-                // xQueueSend(xEngineControlQueue, &g_CurrentThrottle, 0);
+                portENTER_CRITICAL(); 
+                g_EnginePID.setpoint = command.value;  
+                portEXIT_CRITICAL();
                 break;
 
             case SYSTEM_RESET:
