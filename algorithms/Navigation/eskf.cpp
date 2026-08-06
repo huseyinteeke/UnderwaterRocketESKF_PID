@@ -13,14 +13,14 @@ static SubESKF<2, 1> mySubESKF;
 void SubESKF_Init(void) {
     Matrix<2, 2> P;
     P(0, 0) = 0.1f;  P(0, 1) = 0.0f;  
-    P(1, 0) = 0.0f;  P(1, 1) = 0.01f; // Bias belirsizliği
+    P(1, 0) = 0.0f;  P(1, 1) = 0.5f; 
 
     Matrix<2, 2> Q;
     Q(0, 0) = 1e-3f; Q(0, 1) = 0.0f;  
-    Q(1, 0) = 0.0f;  Q(1, 1) = 1e-3f;   
+    Q(1, 0) = 0.0f;  Q(1, 1) = 1e-1f; 
 
     Matrix<1, 1> R;
-    R(0, 0) = 10.0f;
+    R(0, 0) = 5.0f; 
 
     mySubESKF.Init();
     mySubESKF.setP(P);

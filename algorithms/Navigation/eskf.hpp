@@ -106,16 +106,20 @@ public:
         Q(0, 0) = 1e-3f; Q(0, 1) = 0.0f;
         Q(1, 0) = 0.0f;  Q(1, 1) = 1e-3f;
 
-        H(0, 0) = 1.0f; H(0, 1) = 0.0f; // Hız ölçüm matrisi
+        H(0, 0) = 1.0f; H(0, 1) = 0.0f; 
     }
 
 
-    void Predict(float ax, float dt) {
+void Predict(float ax, float dt) {
         float bias_est = x_nom(1, 0);
         float ivme_temiz = ax - bias_est;
         
+        float v_eski = x_nom(0, 0);
+
         // Hız tahmini
         x_nom(0, 0) += ivme_temiz * dt;
+
+        x_est += ((v_eski + x_nom(0, 0)) / 2.0f) * dt;
 
         // F Jacobian Matrisi
         F = I;
@@ -124,13 +128,11 @@ public:
         P = F * P * F.transpose() + Q;
     }
 
-
     void Update(float hiz_model, float dt) {
-        // Adaptif R Matrisi
         if (hiz_model < 0.1f) {
-            R(0, 0) = 100.0f;
+            R(0, 0) = 20.0f; 
         } else {
-            R(0, 0) = 10.0f;
+            R(0, 0) = 5.0f; 
         }
 
         Matrix<STATE_DIM, 1> x_err;
@@ -156,15 +158,10 @@ public:
 
         P = (I - K * H) * P;
 
-        // Hata Enjeksiyonu
-        x_nom(0, 0) += x_err(0, 0); // Hız güncellemesi
-        x_nom(1, 0) += x_err(1, 0); // Bias güncellemesi
-
-        // Konum Entegrasyonu
-        x_est += x_nom(0, 0) * dt;
+        x_nom(0, 0) += x_err(0, 0); 
+        x_nom(1, 0) += x_err(1, 0); 
     }
 
-    // Çıkışları Almak İçin Getter Metodları
     float GetPosition() { return x_est; }
     float GetVelocity() { return x_nom(0, 0); }
     float GetBias()     { return x_nom(1, 0); }
