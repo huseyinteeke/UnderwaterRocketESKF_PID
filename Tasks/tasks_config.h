@@ -42,7 +42,7 @@
 #define TASK_STACK_Comm                  512
 #define TASK_STACK_VELOCITY              512
 #define TASK_STACK_ESKF                 5096
-
+#define TASK_STACK_ENGINE               1024
 
 /**************************************************************************
  * CONTROL FREQUENCIES
@@ -101,7 +101,7 @@ typedef struct
   float target;
 }MaestroMsg_t;
 
-typedef struct __attribute((packed))__
+typedef struct __attribute((packed))
 {
   uint16_t header;
   uint32_t timestamp;
@@ -109,6 +109,23 @@ typedef struct __attribute((packed))__
   uint16_t footer;
 }TelemetryData_t;
 
+
+typedef enum
+{
+  TURN  = 0,
+  DEPTH , 
+  GO_TO , 
+  SYSTEM_RESET , 
+  ARM , 
+  DISARM , 
+  YUNUSLAMA
+} Command_t;
+
+typedef struct __attribute((packed))
+{
+  Command_t command;
+  int16_t value;
+}CommandData_t;
 
 extern volatile uint8_t g_IMU_OK;
 

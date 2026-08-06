@@ -13,6 +13,7 @@
 
 typedef void (*BNO_DelayCallBack_t)(uint32_t ms);
 typedef void (*BNO_DMA_RxCallback_t)(void);
+typedef void (*BNO_NotifyCallback_t)(void);
 typedef void (*BNO_DMA_ErrorCallback_t)(void);
 
 
@@ -170,6 +171,7 @@ typedef struct {
   BNO_DMA_RxCallback_t dmaRxCallback;
   BNO_DMA_ErrorCallback_t dmaErrorCallback;
   BNO_DelayCallBack_t delayCallback;
+  BNO_NotifyCallback_t notifyCallback;
 
   BNO_PowerMode_t powerMode;
   BNO_OperatingMode_t operationMode;

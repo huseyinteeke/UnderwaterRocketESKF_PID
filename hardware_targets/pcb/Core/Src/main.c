@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "FreeRTOS.h"
+#include "stm32f4xx_hal_uart.h"
 #include "task.h"
 #include "semphr.h"
 #include "maestro.h"
@@ -652,6 +653,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   if (htim->Instance == TIM6)
   {
     HAL_IncTick();
+    
   }
   /* USER CODE BEGIN Callback 1 */
 

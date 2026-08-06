@@ -7,6 +7,7 @@
 
 
 #include "bno055_func_struct.h"
+#include "stm32f4xx_hal_i2c.h"
 
 
 
@@ -18,30 +19,37 @@
 
 static HAL_StatusTypeDef BNO_WriteReg(BNO055Init_TypeDef_t *dev, uint8_t reg,
 		uint8_t value) {
-  return HAL_I2C_Mem_Write(dev->i2cHandler, dev->i2cAddress, reg ,
-      1 , &value , 1 , dev->i2cTimeout);
+    HAL_I2C_Mem_Write_DMA(dev->i2cHandler, dev->i2cAddress, reg ,
+      1 , &value , 1 );
+    dev->notifyCallback();
+    return HAL_OK;
 }
 
 static uint8_t BNO_ReadReg(BNO055Init_TypeDef_t *dev, uint8_t reg) {
 	uint8_t value = 0;
-	HAL_I2C_Mem_Read(dev->i2cHandler, dev->i2cAddress, reg , 1,
-	    &value, 1 ,dev->i2cTimeout);
-	return value;
+	HAL_I2C_Mem_Read_DMA(dev->i2cHandler, dev->i2cAddress, reg , 1,
+	    &value, 1 );
+    dev->notifyCallback();
+	return HAL_OK;
 }
 
 static HAL_StatusTypeDef BNO_WriteMulti(BNO055Init_TypeDef_t *dev, uint8_t reg,
 		uint8_t *data, uint8_t len) {
 
-  return  HAL_I2C_Mem_Write(dev->i2cHandler, dev->i2cAddress, reg, 1, data,
-      len, dev->i2cTimeout);
-}
+    HAL_I2C_Mem_Write_DMA(dev->i2cHandler, dev->i2cAddress, reg, 1, data,
+      len);
+    dev->notifyCallback();
+    return HAL_OK;
+    }
 
 
 static HAL_StatusTypeDef BNO_ReadMulti(BNO055Init_TypeDef_t *dev, uint8_t reg,
 		uint8_t *data, uint8_t len){
-  return HAL_I2C_Mem_Read(dev->i2cHandler , dev->i2cAddress , reg ,
-      1 , data , len , dev->i2cTimeout);;
+  return HAL_I2C_Mem_Read_DMA(dev->i2cHandler , dev->i2cAddress , reg ,
+      1 , data , len );
 }
+
+
 static void BNO_SetPage(BNO055Init_TypeDef_t *dev, uint8_t page) {
 	BNO_WriteReg(dev, BNO055_PAGE_ID0, page); // 0x07
 }
