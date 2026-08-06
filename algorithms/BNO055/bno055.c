@@ -90,14 +90,14 @@ static inline void BNO_Delay(BNO055Init_TypeDef_t *dev , uint32_t ms){
 BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
   HAL_StatusTypeDef status = HAL_ERROR;
 
-
+/*
   #ifdef HW_PCB
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, RESET);
   BNO_Delay(dev , 20); 
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_5, SET);
   BNO_Delay(dev , 700);
   #endif
-
+*/
   BNO_Delay(dev , 650);
 
   status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress , 3, 100);
