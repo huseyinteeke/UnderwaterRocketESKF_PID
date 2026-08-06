@@ -38,6 +38,7 @@
 #define TASK_STACK_BNO_READ             1024
 #define TASK_STACK_YAWROLL_CONTROL      1024
 #define TASK_STACK_PITCH_CONTROL        1024
+#define TASK_STACK_SPEED_CONTROL        1024
 #define TASK_STACK_MS5837_READ          1024
 #define TASK_STACK_Comm                  512
 #define TASK_STACK_VELOCITY              512
@@ -53,7 +54,10 @@
 #define MS5837_READ_RATE_HZ             30      // 10Hz depth reading
 #define VELOCITY_RATE_HZ                50
 #define DEPTH_CONTROL_RATE_HZ           20
+#define ENGINE_CONTROL_RATE_HZ           5
 
+
+#define ENGINE_READ_PERIOD_MS       pdMS_TO_TICKS(1000 / ENGINE_CONTROL_RATE_HZ)
 #define BNO_READ_PERIOD_MS          pdMS_TO_TICKS(1000 / BNO_READ_RATE_HZ)
 #define YAW_CONTROL_PERIOD_MS       pdMS_TO_TICKS(1000 / YAW_CONTROL_RATE_HZ)
 #define PITCH_CONTROL_PERIOD_MS     pdMS_TO_TICKS(1000 / PITCH_CONTROL_RATE_HZ)

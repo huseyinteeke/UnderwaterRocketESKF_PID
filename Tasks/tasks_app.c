@@ -4,6 +4,7 @@
  *  Created on: Jan 23, 2026
  *      Author: husey
  */
+#include "pid.h"
 #include "tasks_config.h"
 #include "eskf_c_wrapper.h"
 #include "main.h"
@@ -178,6 +179,24 @@ PID_Config_t g_PitchPID = {
     .integralLimit = 30.0f
 };
 
+PID_Config_t g_EnginePID = 
+{
+  .Kp = 20,
+  .Ki = 1,
+  .Kd = 5, 
+  .dt = 0.2f,
+  .setpoint = 0.0f,
+  .lastError     = 0.0f,
+  .integralError = 0.0f,
+
+  .outputLimit   = 800.0f,
+  .integralLimit = 100.0f
+};
+
+
+
+
+
 volatile uint8_t g_ARM_STATUS = 0;
 
 
@@ -207,6 +226,8 @@ static TaskHandle_t xEskfPredictTask;
 static TaskHandle_t xEskfUpdateTask;
 static TaskHandle_t xPitch;
 static TaskHandle_t xEngineControlTask;
+static TaskHandle_t xEnginePIDTask;
+
 
 static void vBNOTask(void *pvParameters);
 
@@ -223,7 +244,7 @@ static void vEskfPredictTask(void* parameters);
 static void vEskfUpdateTask(void* parameters);
 
 static void vPitchTask(void *pvParameters);
-
+static void vEnginePidTask(void *pvParameters);
 
 /*
  * ################GLOBAL SYSTEM INIT FUNCTION######################
@@ -341,12 +362,37 @@ void System_Tasks_Init(void){
           NULL ,
           TASK_PRIORITY_VELOCITY, 
           &xEngineControlTask);
+
+        xTaskCreate(vEnginePidTask, 
+          "Engine PID", 
+          TASK_STACK_SPEED_CONTROL,
+          NULL ,
+          TASK_PRIORITY_VELOCITY, 
+          &xEnginePIDTask);
        SubESKF_Init();
 
     vTaskStartScheduler();
 }
 
+static void vEnginePidTask(void *pvParameters)
+{
 
+  float current_distance;
+  uint16_t enginecommand;
+
+  TickType_t xLastWakeTime;
+  const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+
+  for(;;){
+     portENTER_CRITICAL();
+     current_distance = lastUpdatedDistancex;   
+     portEXIT_CRITICAL();
+     enginecommand = PID_Calculate(&g_EnginePID , current_distance);
+     enginecommand += 1000;
+     xQueueSend(xMaestroCmdQueue, &enginecommand , 0);
+      vTaskDelayUntil(&xLastWakeTime , xFrequency);
+    }
+}
 
 static void vEngineControlTask(void *parameters)
 {
