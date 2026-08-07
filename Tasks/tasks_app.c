@@ -4,7 +4,9 @@
  *  Created on: Jan 23, 2026
  *      Author: husey
  */
- #include "stm32f407xx.h"
+ #include "bno055.h"
+#include "cmsis_gcc.h"
+#include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h"
  #include "stm32f4xx_hal_i2c.h"
@@ -849,11 +851,11 @@ static uint32_t g_CurrentThrottle = 1000;
 static void vCommandHandler(void* parameters)
 {
     static CommandData_t command;
-    
+  
     for(;;)
     {
         xQueueReceive(xCmdQueue, &command, portMAX_DELAY);
-  
+    
         switch (command.command) 
         {
             case ARM:
@@ -946,12 +948,22 @@ static void vCommandHandler(void* parameters)
 static void vCommRxTask(void * parameters)
 {
   uint8_t command = 0;
+  CommandData_t commands[4];
+  int8_t idx = 0;
   for(;;)
   {
     static CommandData_t cmd;
     HAL_UART_Receive_DMA(&huart6 , (uint8_t *)&cmd , sizeof(CommandData_t));
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
     xQueueSend(xCmdQueue , &cmd , 0);
+    if (idx < 4) {
+        commands[idx] = cmd;
+        idx++;
+    }else{
+      uint8_t a = 0;
+      __NOP();
+    }
+
   }
 }
 
