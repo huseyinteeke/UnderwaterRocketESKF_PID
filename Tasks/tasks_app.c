@@ -393,7 +393,7 @@ static void vEnginePidTask(void *pvParameters)
      portEXIT_CRITICAL();
      enginecommand = PID_Calculate(&g_EnginePID , current_distance);
      enginecommand += 1000;
-     xQueueSend(xMaestroCmdQueue, &enginecommand , 0);
+     xQueueSend(xEngineControlQueue , &enginecommand , 0);
       vTaskDelayUntil(&xLastWakeTime , xFrequency);
     }
 }
@@ -874,6 +874,9 @@ static void vCommandHandler(void* parameters)
                     vTaskSuspend(xEngineControlTask); // Motor kontrol taskini durdur
                 }
                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
+                portENTER_CRITICAL();
+                lastUpdatedPWM = 1000;
+                portEXIT_CRITICAL();
                 break;
 
             case YUNUSLAMA:
@@ -980,10 +983,9 @@ static void vCommTxTask(void* parameters)
     toSendlist.distancex = lastUpdatedDistancex;
     toSendlist.distancey = lastUpdatedDistancey;
     toSendlist.distancez = lastUpdatedDistancez;
-    toSendlist.rpm       = lastUpdatedRPM;
+    toSendlist.rpm       = lastUpdatedPWM;
     toSendlist.rudderangle  = lastUpdatedRudder;
     toSendlist.sternangle   = lastUpdatedStern;
-    toSendlist.rpm       = lastUpdatedRPM;
     portEXIT_CRITICAL();
 
     HAL_UART_Transmit_DMA(&huart6, (uint8_t *)&toSendlist , sizeof(TelemetryData_t));
