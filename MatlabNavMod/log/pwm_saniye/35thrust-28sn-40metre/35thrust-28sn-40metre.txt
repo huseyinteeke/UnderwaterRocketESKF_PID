@@ -1,0 +1,8 @@
+ 40 metrede araç yüzeye çıktı
+ 34.5 metrede motor durdu
+10 metre: 8.5 saniye
+20 metre: 15.21 saniye
+30 metre: 22.30 saniye
+40 metre: 34.05 saniye
+%35 thrust 
+28 saniye motor çalıştı

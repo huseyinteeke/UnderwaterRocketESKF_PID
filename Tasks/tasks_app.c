@@ -5,6 +5,7 @@
  *      Author: husey
  */
  #include "bno055.h"
+#include "bno055_func_struct.h"
 #include "cmsis_gcc.h"
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
@@ -85,7 +86,7 @@ Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
     .powerMode     = BNO_PWR_MODE_NORMAL,
     .notifyCallback = Notify_wrapper,
     .operationMode = BNO_MODE_IMU,
-    .externalCrystal = 0,
+    .externalCrystal = BNO_CLK_INTERNAL,
     .axisRemap = BNO_AXIS_REMAP_P1,
     .accelUnit = BNO_ACC_UNIT_MS2,
     .gyroUnit  = BNO_GYRO_UNIT_DPS,
@@ -228,9 +229,7 @@ static TaskHandle_t xMaestroGateKeeper;
 static TaskHandle_t xCommRxTask;
 static TaskHandle_t xCommandHandler;
 static TaskHandle_t xCommTxTask;
-static TaskHandle_t xEskfPredictTask;
-static TaskHandle_t xEskfUpdateTask;
-static TaskHandle_t xPitch;
+static TaskHandle_t xEskfTask;
 static TaskHandle_t xEngineControlTask;
 static TaskHandle_t xEnginePIDTask;
 
@@ -246,10 +245,7 @@ static void vMaestroGatekeeperTask(void* pvParameters);
 static void vCommRxTask(void * parameters);
 static void vCommTxTask(void* parameters);
 static void vCommandHandler(void* parameters);
-static void vEskfPredictTask(void* parameters);
-static void vEskfUpdateTask(void* parameters);
-
-static void vPitchTask(void *pvParameters);
+static void vEskfTask(void* parameters);
 static void vEnginePidTask(void *pvParameters);
 
 /*
@@ -271,13 +267,6 @@ void System_Tasks_Init(void){
                 NULL,
                 TASK_PRIORITY_BNO_READ ,
                 &xTaskBNO_Read);
-
-       xTaskCreate(vPitchTask ,
-                "BNO_READ" ,
-                TASK_STACK_BNO_READ ,
-                NULL,
-                TASK_PRIORITY_BNO_READ ,
-                &xPitch);
 
      if(xMS5837_BinarySem){
          xTaskCreate(vMS5837Task,
@@ -344,23 +333,14 @@ void System_Tasks_Init(void){
         &xCommandHandler);
         
         
-        xTaskCreate(vEskfPredictTask ,
+        xTaskCreate(vEskfTask ,
           "ESKF Predict",
           TASK_STACK_ESKF,
           NULL,
           TASK_PRIORITY_ESKF,
-          &xEskfPredictTask
+          &xEskfTask
         );
         
-
-        xTaskCreate(vEskfUpdateTask ,
-                      "ESKF update",
-                      TASK_STACK_ESKF,
-                      NULL,
-                      TASK_PRIORITY_ESKF,
-                      &xEskfUpdateTask
-          );
-
 
         xTaskCreate(vEngineControlTask , 
           "Engine Control", 
@@ -375,6 +355,7 @@ void System_Tasks_Init(void){
           NULL ,
           TASK_PRIORITY_VELOCITY, 
           &xEnginePIDTask);
+          
        SubESKF_Init();
 
     vTaskStartScheduler();
@@ -382,21 +363,38 @@ void System_Tasks_Init(void){
 
 static void vEnginePidTask(void *pvParameters)
 {
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+    
+    uint16_t target_pwm = 1000;
 
-  float current_distance;
-  uint16_t enginecommand;
+    for(;;)
+    {
+        float current_dist;
 
-  TickType_t xLastWakeTime;
-  const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+        // X eksenindeki mesafeyi güvenli bir şekilde al
+        portENTER_CRITICAL();
+        current_dist = lastUpdatedDistancex;
+        portEXIT_CRITICAL();
 
-  for(;;){
-     portENTER_CRITICAL();
-     current_distance = lastUpdatedDistancex;   
-     portEXIT_CRITICAL();
-     enginecommand = PID_Calculate(&g_EnginePID , current_distance);
-     enginecommand += 1000;
-     xQueueSend(xEngineControlQueue , &enginecommand , 0);
-      vTaskDelayUntil(&xLastWakeTime , xFrequency);
+        // 40 metre hedefine ulaşıldı mı kontrolü
+        if(current_dist < 40.0f)
+        {
+            target_pwm = 1700; // 40 metrenin altındaysa ileri gitmeye devam et
+        }
+        else
+        {
+            target_pwm = 1000; // 40 metreye ulaşıldı, motorları tamamen durdur
+            portENTER_CRITICAL();
+            g_YawPID.setpoint = 90.0f;
+            portEXIT_CRITICAL();
+        }
+
+        // Komutu motor kuyruğuna gönder
+        xQueueSend(xEngineControlQueue, &target_pwm, 0);
+
+        // Görev periyodunu bekle
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
 
@@ -420,7 +418,7 @@ static void vEngineControlTask(void *parameters)
     {
         uint16_t new_command;
         
-        if(xQueueReceive(xEngineControlQueue, &new_command, pdMS_TO_TICKS(100)) == pdTRUE)
+        if(xQueueReceive(xEngineControlQueue, &new_command, pdMS_TO_TICKS(500)) == pdTRUE)
         {
             if(new_command <= max_signal && new_command >= min_signal)
             {
@@ -452,92 +450,40 @@ static void vEngineControlTask(void *parameters)
 }
 
 
-static void vEskfPredictTask(void* parameters)
+static void vEskfTask(void* parameters)
 {
-  TickType_t xLastWakeTime = xTaskGetTickCount();
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(10); // 100 Hz loop
+    const float dt = 0.01f;
 
-  const TickType_t xFrequency = pdMS_TO_TICKS(10);
+    static float model_velocity = 0.0f; 
 
+    float currentaccel;
+    float current_pwm;
 
+    for(;;)
+    {
+        // 1. İhtiyacımız olan son güncel verileri (İvme ve PWM) güvenli bölgede alıyoruz
+        portENTER_CRITICAL();
+        currentaccel = lastUpdatedAccelx;
+        current_pwm = lastUpdatedPWM;
+        portEXIT_CRITICAL();
 
-  const float dt = 0.01f;
+        // 2. Fizik modelini işlet (dt = 0.01 ile 100 Hz'de güncelleniyor)
+        pwm_to_velocity(current_pwm, &model_velocity, dt);
 
-  float currentaccel;
+        SubESKF_Step(model_velocity, currentaccel, dt);
 
- 
+        portENTER_CRITICAL();
+        SubESKF_GetVelocity(&lastUpdatedVelocityx);
+        SubESKF_GetPosition(&lastUpdatedDistancex);
+        portEXIT_CRITICAL();
 
-  for(;;)
-
-  {
-
-
-
-    portENTER_CRITICAL();
-
-    currentaccel = lastUpdatedAccelx;
-
-    portEXIT_CRITICAL();
-
-
-
-    SubESKF_Predict(currentaccel , dt);
-
-
-
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
-
-
-
-  }
-
-
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
+    }
 }
 
 
-static void vEskfUpdateTask(void* parameters)
-{
-  static float current_pwm;
-  static float lastv;
-  TickType_t xLastWakeTime = xTaskGetTickCount();
-  const TickType_t xFrequency = pdMS_TO_TICKS(100);
-  const float dt = 0.1f;
-  for(;;)
-  {
-
-
-    portENTER_CRITICAL();
-    lastv = lastUpdatedVelocityx;
-    current_pwm = lastUpdatedPWM;
-    portEXIT_CRITICAL();
-
-    pwm_to_velocity(current_pwm , &lastv , dt);
-    SubESKF_UpdateModelVelocity(lastv , dt);
-
-
-    
-    portENTER_CRITICAL();
-    SubESKF_GetVelocity(&lastUpdatedVelocityx);
-    SubESKF_GetPosition(&lastUpdatedDistancex);
-    portEXIT_CRITICAL();
-
-    vTaskDelayUntil(&xLastWakeTime, xFrequency);
-  }
-
-}
-
-static void vPitchTask(void *pvParameters){
-  for(;;)
-  {
-    if(lastUpdatedDepth < 0.3f && lastUpdatedPitch > 30.0f)
-  {
-      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_14, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13, GPIO_PIN_SET);
-      HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
-  }
-    vTaskDelay(pdMS_TO_TICKS(200));
-  }
-}
 
 void I2C_Clear(GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin, GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
 {
@@ -587,87 +533,84 @@ void I2C_Clear(GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin, GPIO_TypeDef *SDA_Port,
 static void vBNOTask(void *pvParameters)
 {
   BNO_Status_t status = BNO_TIMEOUT;
-
-  //ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-
+  vTaskDelay(2000);
   status = BNO055_Init(&localBNO);
 
   while(status != BNO_OK)
   {
-      HAL_GPIO_TogglePin(GPIOD, GPIO_PIN_13);
-      HAL_I2C_DeInit(localBNO.i2cHandler);
-      #ifdef HW_PERTINAKS
-      I2C_Clear(GPIOB , GPIO_PIN_10 , GPIOB , GPIO_PIN_11);
-      #elif HW_PCB
-      I2C_Clear(GPIOB , GPIO_PIN_6 , GPIOB , GPIO_PIN_7);
-      #endif
+      
+      vTaskDelay(50);
 
-      localBNO.i2cHandler->State = HAL_I2C_STATE_READY;
-      localBNO.i2cHandler->ErrorCode = HAL_I2C_ERROR_NONE;
-      
-      if(localBNO.i2cHandler->hdmatx != NULL) {
-          localBNO.i2cHandler->hdmatx->State = HAL_DMA_STATE_READY;
-      }
-      if(localBNO.i2cHandler->hdmarx != NULL) {
-          localBNO.i2cHandler->hdmarx->State = HAL_DMA_STATE_READY;
-      }
-      
-      HAL_I2C_Init(localBNO.i2cHandler);
       status = BNO055_Init(&localBNO);
   }
+  
   portENTER_CRITICAL();
   PID_Reset(&g_YawPID);
   portEXIT_CRITICAL();
+  
   BNO055_EulerData_t tmp;
   BNO055_AccelData_t acctmp;
 
-#define BNO_BURST_READ_SIZE  20
+  #define BNO_BURST_READ_SIZE  20
   static uint8_t burst_buffer[BNO_BURST_READ_SIZE];
+
+  #define MY_ABS(x) ((x) < 0.0f ? -(x) : (x))
 
   float yawOffset = 0.0f;
   uint8_t isOffsetSet = 0;
   uint8_t initCounter = 0;
 
+  // Glitch koruması için bayrak ve değişkenler
+  float lastValidRoll = 0.0f;
+  float lastValidPitch = 0.0f;
+  uint8_t isFirstValidRead = 0;
+
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(BNO_READ_PERIOD_MS);
 
-  for(;;){
-    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1 , burst_buffer, BNO_BURST_READ_SIZE);
-    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
-    BNO055_ParseEulerBuffer(&localBNO, &burst_buffer[0] , &tmp);
-    BNO055_ParseAccelBuffer(&localBNO, &burst_buffer[14], &acctmp);
-    float raw_heading = 450.0f - tmp.heading;
-    while (raw_heading >= 360.0f) raw_heading -= 360.0f;
-    while (raw_heading < 0.0f)    raw_heading += 360.0f;
-
-    if (!isOffsetSet) {
-        if (initCounter < 50) {
-            initCounter++;
-        } else {
-            yawOffset = raw_heading - 270.0f;
-            isOffsetSet = 1;
+  for(;;) {
+    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1, burst_buffer, BNO_BURST_READ_SIZE);
+      
+      ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(BNO_READ_PERIOD_MS));
+        
+        BNO055_ParseEulerBuffer(&localBNO, &burst_buffer[0], &tmp);
+        BNO055_ParseAccelBuffer(&localBNO, &burst_buffer[14], &acctmp);
+        
+        float raw_heading = 450.0f - tmp.heading;
+        while (raw_heading >= 360.0f) raw_heading -= 360.0f;
+        while (raw_heading < 0.0f)    raw_heading += 360.0f;
+        
+        if (!isOffsetSet) {
+            if (initCounter < 50) {
+                initCounter++;
+            } else {
+                yawOffset = raw_heading - 270.0f;
+                isOffsetSet = 1;
+            }
         }
-    }
-
-    float finalYaw = raw_heading - yawOffset;
-
-    // 0-360 normalizasyonu
-    while (finalYaw >= 360.0f) finalYaw -= 360.0f;
-    while (finalYaw < 0.0f)    finalYaw += 360.0f;
-
-    portENTER_CRITICAL();
-    lastUpdatedYaw = finalYaw;
-    lastUpdatedRoll = tmp.roll;
-    lastUpdatedPitch = tmp.pitch - 7.0;
-    lastUpdatedAccelx = acctmp.acc_x - SubESKF_GetBias(); 
-    lastUpdatedAccely = acctmp.acc_y;
-    lastUpdatedAccelz = acctmp.acc_z;
-    portEXIT_CRITICAL();
+        
+        float finalYaw = raw_heading - yawOffset;
+        while (finalYaw >= 360.0f) finalYaw -= 360.0f;
+        while (finalYaw < 0.0f)    finalYaw += 360.0f;
 
 
+
+        portENTER_CRITICAL();
+        lastUpdatedYaw = finalYaw;
+        lastUpdatedRoll = tmp.roll;
+        lastUpdatedPitch = tmp.pitch;
+        lastUpdatedAccelx = acctmp.acc_x; 
+        lastUpdatedAccely = acctmp.acc_y;
+        lastUpdatedAccelz = acctmp.acc_z;
+        portEXIT_CRITICAL();
+      
+   
+    
+    
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
+  
 
 /********************************************************************************
  **********************************vMS5837 Read Task***********************
@@ -851,7 +794,8 @@ static uint32_t g_CurrentThrottle = 1000;
 static void vCommandHandler(void* parameters)
 {
     static CommandData_t command;
-  
+    static uint16_t target = 1600;
+    xQueueSend(xEngineControlQueue, &target, 100);
     for(;;)
     {
         xQueueReceive(xCmdQueue, &command, portMAX_DELAY);
@@ -866,14 +810,17 @@ static void vCommandHandler(void* parameters)
                 
                 if(xEngineControlTask != NULL)
                 {
-                    vTaskResume(xEngineControlTask); 
+                  if(eTaskGetState(xEngineControlTask) == eBlocked)
                     xTaskNotify(xEngineControlTask, 0, eNoAction);
+                }else {
+                    vTaskResume(xEngineControlTask);
                 }
                 break; 
+
             case DISARM:
                 if(xEngineControlTask != NULL)
                 {
-                    vTaskSuspend(xEngineControlTask); // Motor kontrol taskini durdur
+                    vTaskSuspend(xEngineControlTask); 
                 }
                 __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
                 portENTER_CRITICAL();
@@ -892,7 +839,6 @@ static void vCommandHandler(void* parameters)
                 g_PitchPID.integralError = 0.0f;
                 g_PitchPID.outputLimit   = 50.0f;
                 g_PitchPID.integralLimit = 30.0f;          
-                
                 g_DepthPID.Kp = 10.0f;
                 g_DepthPID.Ki = 0.0f;
                 g_DepthPID.Kd = 1.0f;
@@ -956,14 +902,6 @@ static void vCommRxTask(void * parameters)
     HAL_UART_Receive_DMA(&huart6 , (uint8_t *)&cmd , sizeof(CommandData_t));
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
     xQueueSend(xCmdQueue , &cmd , 0);
-    if (idx < 4) {
-        commands[idx] = cmd;
-        idx++;
-    }else{
-      uint8_t a = 0;
-      __NOP();
-    }
-
   }
 }
 

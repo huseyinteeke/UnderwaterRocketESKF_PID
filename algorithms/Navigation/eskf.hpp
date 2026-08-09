@@ -2,6 +2,7 @@
 #define EKF_EKF_HPP_
 
 #include <stdint.h>
+#include <math.h> 
 #include "stm32f4xx_hal.h"
 
 #ifndef __FPU_PRESENT
@@ -89,77 +90,84 @@ private:
     Matrix<STATE_DIM, MEASURE_DIM> K; 
     
     float x_est; // Konum tutmak için
+    float hiz_model_eski; // Konum entegrasyonunda kullanılacak
+    uint8_t counter;      // Update adımı frekansı için
+    uint8_t zupt_counter; // ZUPT kontrolü için
 
 public:
-    SubESKF() : x_est(0.0f) {}
+    SubESKF() : x_est(0.0f), hiz_model_eski(0.0f), counter(0), zupt_counter(0) {}
 
     void Init() {
         for(int i = 0; i < STATE_DIM; i++) {
             x_nom(i, 0) = 0.0f;
             for(int j = 0; j < STATE_DIM; j++) {
                 I(i, j) = (i == j) ? 1.0f : 0.0f;
-                P(i, j) = (i == j) ? 0.1f : 0.0f;
             }
         }
-        P(1, 1) = 0.01f; // Bias kovaryansı
-        
-        Q(0, 0) = 1e-3f; Q(0, 1) = 0.0f;
-        Q(1, 0) = 0.0f;  Q(1, 1) = 1e-3f;
-
         H(0, 0) = 1.0f; H(0, 1) = 0.0f; 
     }
 
+    void Step(float hiz_model, float ax, float dt) {
+        // 1. KONUM ENTEGRASYONU 
+        x_est += ((hiz_model_eski + hiz_model) / 2.0f) * dt;
+        hiz_model_eski = hiz_model;
 
-void Predict(float ax, float dt) {
+        // 2. PREDICT ADIMI
         float bias_est = x_nom(1, 0);
         float ivme_temiz = ax - bias_est;
         
-        float v_eski = x_nom(0, 0);
+        x_nom(0, 0) += ivme_temiz * dt; // Hız tahmini
 
-        // Hız tahmini
-        x_nom(0, 0) += ivme_temiz * dt;
-
-        x_est += ((v_eski + x_nom(0, 0)) / 2.0f) * dt;
-
-        // F Jacobian Matrisi
         F = I;
         F(0, 1) = -dt; 
-
         P = F * P * F.transpose() + Q;
-    }
 
-    void Update(float hiz_model, float dt) {
-        if (hiz_model < 0.1f) {
-            R(0, 0) = 20.0f; 
-        } else {
-            R(0, 0) = 5.0f; 
-        }
+        // 3. UPDATE ADIMI (Frekans bölücü ile)
+        counter++;
+        if (counter >= 2) {
+            Matrix<STATE_DIM, 1> x_err;
+            x_err(0, 0) = 0.0f;
+            x_err(1, 0) = 0.0f;
 
-        Matrix<STATE_DIM, 1> x_err;
-        x_err(0, 0) = 0.0f;
-        x_err(1, 0) = 0.0f;
+            int max_iter = 3;
+            for (int i = 0; i < max_iter; i++) {
+                float z = hiz_model - (x_nom(0, 0) + x_err(0, 0));
+                
+                S = H * P * H.transpose() + R;
+                K = P * H.transpose() * S.inverse();
+                
+                Matrix<MEASURE_DIM, 1> z_mat;
+                z_mat(0, 0) = z;
+                
+                x_err = x_err + K * z_mat;
 
-        int max_iter = 3;
-        for (int i = 0; i < max_iter; i++) {
-            float z = hiz_model - (x_nom(0, 0) + x_err(0, 0));
-            
-            S = H * P * H.transpose() + R;
-            K = P * H.transpose() * S.inverse();
-            
-            Matrix<MEASURE_DIM, 1> z_mat;
-            z_mat(0, 0) = z;
-            
-            x_err = x_err + K * z_mat;
-
-            if (abs(z) < 1e-4f) {
-                break;
+                if (fabsf(z) < 1e-4f) {
+                    break;
+                }
             }
+
+            P = (I - K * H) * P;
+
+            x_nom(0, 0) += x_err(0, 0); 
+            x_nom(1, 0) += x_err(1, 0); 
+            
+            counter = 0; 
         }
 
-        P = (I - K * H) * P;
+        // 4. GÜVENLİ ZUPT (DURAĞANLIK) KONTROLÜ
+        bool is_model_zero = (hiz_model == 0.0f);
+        bool is_acc_quiet  = (fabsf(ivme_temiz) < 0.04f);
 
-        x_nom(0, 0) += x_err(0, 0); 
-        x_nom(1, 0) += x_err(1, 0); 
+        if (is_model_zero && is_acc_quiet) {
+            zupt_counter++;
+        } else {
+            zupt_counter = 0; 
+        }
+
+        if (zupt_counter >= 50) {
+            x_nom(0, 0) = 0.0f; 
+            zupt_counter = 50;  
+        }
     }
 
     float GetPosition() { return x_est; }

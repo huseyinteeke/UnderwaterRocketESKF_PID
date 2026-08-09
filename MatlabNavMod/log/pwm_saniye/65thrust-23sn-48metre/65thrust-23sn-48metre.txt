@@ -1,0 +1,7 @@
+44 metrede motor durdu
+48 metre araç yüzeye çıktı
+%65 thrust 
+10 metre: 4.83 
+20 metre: 8.98 
+30 metre: 13.71 
+40 metre: 16.13

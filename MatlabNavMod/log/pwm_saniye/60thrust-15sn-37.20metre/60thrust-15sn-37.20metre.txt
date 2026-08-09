@@ -1,0 +1,7 @@
+37.20 metrede araç  durdu 
+31.75 metre motor durdu
+15 saniye motor çalıştı 
+10 metre: 5.08 metre 
+20 metre: 9.45 metre 
+30 metre: 14.89 saniye %
+60 thrust

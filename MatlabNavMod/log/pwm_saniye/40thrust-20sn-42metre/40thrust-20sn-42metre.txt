@@ -1,0 +1,7 @@
+34.20 metrede motor durdu
+42 metrede araç durdu
+20 saniye motor çalıştı
+10 metre: 5.70 
+20 metre: 10.77 
+30 metre: 16.79
+40 metre: 23.79

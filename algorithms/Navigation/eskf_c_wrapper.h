@@ -1,48 +1,21 @@
-/*
- * ekf.h
- *
- *  Created on: Apr 2, 2026
- *      Author: husey
- */
-
-#ifndef EKF_EKF_C_WRAPPER_H_
-#define EKF_EKF_C_WRAPPER_H_
-
+#ifndef ESKF_C_WRAPPER_H_
+#define ESKF_C_WRAPPER_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-
 void SubESKF_Init(void);
 
-void SubESKF_Predict(float current_ax, float dt);
-void SubESKF_UpdateModelVelocity(float hiz_model, float dt);
+// Yeni eklenen Step fonksiyonu
+void SubESKF_Step(float hiz_model, float ax, float dt);
+
 void SubESKF_GetPosition(float* position);
 void SubESKF_GetVelocity(float* velocity);
-float SubESKF_GetBias();
-
+float SubESKF_GetBias(void);
 
 #ifdef __cplusplus
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #endif
 
-
-
-
-
-#endif /* EKF_EKF_C_WRAPPER_H_ */
+#endif /* ESKF_C_WRAPPER_H_ */
