@@ -104,79 +104,78 @@ BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
   
 
 
-  
+
   status = HAL_I2C_IsDeviceReady(dev->i2cHandler, dev->i2cAddress , 3, 100);
   //if(status != HAL_OK) return BNO_I2C_ERROR;
-	// 1.2. Goto page 0
+  // 1.2. Goto page 0
 
 
 
- 	BNO_SetPage(dev, 0);
+  BNO_SetPage(dev, 0);
   BNO_Delay(dev, 10);
-	// 1.3. Chip ID check (0xA0)
+  // 1.3. Chip ID check (0xA0)
 	
   uint8_t id = BNO_ReadReg(dev, BNO055_CHIP_ID);
-	BNO_Delay(dev , 20);
+  BNO_Delay(dev, 20);
 
-	for(int i = 0 ; i < 10 ; i ++){
-		if(id == 0xA0) break;
-
-		id = BNO_ReadReg(dev, BNO055_CHIP_ID);
+  for (int i = 0; i < 10; i++) {
+    if (id == 0xA0) break;
+    id = BNO_ReadReg(dev, BNO055_CHIP_ID);
 		BNO_Delay(dev , 30);
-	}
-    
+  }
+
 
 	if(id != 0xA0) return BNO_ID_ERROR;
 
-	BNO_WriteReg(dev, BNO055_SYS_TRIGGER, 0x20);
+  BNO_WriteReg(dev, BNO055_SYS_TRIGGER, 0x20);
 	BNO_Delay(dev , 800);
 
-	BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
+  BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
 	BNO_Delay(dev , 20);
-	BNO_WriteReg(dev, BNO055_PWR_MODE, dev->powerMode);
+  BNO_WriteReg(dev, BNO055_PWR_MODE, dev->powerMode);
 	BNO_Delay(dev , 10);
 
-	uint8_t units_reg = 0;
-	units_reg |= (dev->accelUnit << 0);
+  uint8_t units_reg = 0;
+  units_reg |= (dev->accelUnit << 0);
 	units_reg |= (dev->gyroUnit << 1);
-	units_reg |= (dev->eulerUnit << 2);
+  units_reg |= (dev->eulerUnit << 2);
 	units_reg |= (dev->tempUnit << 4);
-	units_reg |= (1 << 7);
+  units_reg |= (1 << 7);
 
-	BNO_WriteReg(dev, BNO055_UNIT_SEL, units_reg);
+  BNO_WriteReg(dev, BNO055_UNIT_SEL, units_reg);
 
 
-	uint8_t p_idx = dev->axisRemap;
-	p_idx &= 0x07; // Hata koruması
+  uint8_t p_idx = dev->axisRemap;
+  p_idx &= 0x07; // Hata koruması
 
-	BNO_WriteReg(dev, BNO055_AXIS_MAP_CNFG, REMAP_CONFIG_TABLE[p_idx][0]);
-	BNO_WriteReg(dev, BNO055_AXIS_MAP_SIGN, REMAP_CONFIG_TABLE[p_idx][1]);
+  BNO_WriteReg(dev, BNO055_AXIS_MAP_CNFG, REMAP_CONFIG_TABLE[p_idx][0]);
+  BNO_WriteReg(dev, BNO055_AXIS_MAP_SIGN, REMAP_CONFIG_TABLE[p_idx][1]);
 
-	uint8_t trigger = BNO_ReadReg(dev, BNO055_SYS_TRIGGER);
-	trigger &= ~0x80;
+  uint8_t trigger = BNO_ReadReg(dev, BNO055_SYS_TRIGGER);
+  trigger &= ~0x80;
 
-	if (dev->externalCrystal == BNO_CLK_EXTERNAL) {
-		trigger |= 0x80;
-	}
-	BNO_WriteReg(dev, BNO055_SYS_TRIGGER, trigger);
+  if (dev->externalCrystal == BNO_CLK_EXTERNAL) {
+    trigger |= 0x80;
+  }
+  BNO_WriteReg(dev, BNO055_SYS_TRIGGER, trigger);
 
 	BNO_Delay(dev ,10);
-	if (dev->useStoredCalibration) {
-		BNO_WriteMulti(dev, BNO055_ACC_OFFSETX_LSB, dev->calibrationData, 22);
+  if (dev->useStoredCalibration) {
+    BNO_WriteMulti(dev, BNO055_ACC_OFFSETX_LSB, dev->calibrationData, 22);
 		BNO_Delay(dev ,100);
-	}
-	BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
+  }
+  BNO_WriteReg(dev, BNO055_OPR_MODE, BNO_MODE_CONFIG);
 	BNO_Delay(dev ,20);
-	BNO_WriteReg(dev, BNO055_OPR_MODE, dev->operationMode);
+  BNO_WriteReg(dev, BNO055_OPR_MODE, dev->operationMode);
 	BNO_Delay(dev , 30);
-	uint8_t sys_stat = BNO_ReadReg(dev, BNO055_SYS_STAT);
-	if (sys_stat == 0x01) {
+  uint8_t sys_stat = BNO_ReadReg(dev, BNO055_SYS_STAT);
+  if (sys_stat == 0x01) {
 
 		uint8_t err =BNO_ReadReg(dev , BNO055_SYS_ERR);
-		dev->lastError = err;
-		return BNO_SYS_ERROR;
-	}
-	return BNO_OK;
+    dev->lastError = err;
+    return BNO_SYS_ERROR;
+  }
+  return BNO_OK;
 }
 
 
