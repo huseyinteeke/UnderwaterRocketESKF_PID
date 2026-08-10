@@ -72,6 +72,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     ../../algorithms/MS5837
     ../../algorithms/Navigation
     ../../algorithms/PID
+    ../../algorithms/MissionPlanner
     ../../Tasks
     ../../Thirdparty/FreeRTOS/portable/GCC/ARM_CM4F
     ../../Thirdparty/SEGGER

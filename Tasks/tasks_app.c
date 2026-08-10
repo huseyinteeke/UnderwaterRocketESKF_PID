@@ -10,6 +10,7 @@
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h"
+#include "stm32f4xx_hal_gpio.h"
  #include "stm32f4xx_hal_i2c.h"
 
 #include "pid.h"
@@ -86,7 +87,7 @@ Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
     .powerMode     = BNO_PWR_MODE_NORMAL,
     .notifyCallback = Notify_wrapper,
     .operationMode = BNO_MODE_IMU,
-    .externalCrystal = BNO_CLK_INTERNAL,
+    .externalCrystal = 0,
     .axisRemap = BNO_AXIS_REMAP_P1,
     .accelUnit = BNO_ACC_UNIT_MS2,
     .gyroUnit  = BNO_GYRO_UNIT_DPS,
@@ -569,44 +570,39 @@ static void vBNOTask(void *pvParameters)
   const TickType_t xFrequency = pdMS_TO_TICKS(BNO_READ_PERIOD_MS);
 
   for(;;) {
-    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1, burst_buffer, BNO_BURST_READ_SIZE);
-      
-      ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(BNO_READ_PERIOD_MS));
+    HAL_I2C_Mem_Read_DMA(localBNO.i2cHandler, localBNO.i2cAddress, BNO055_EUL_HEADING_LSB, 1, burst_buffer, BNO_BURST_READ_SIZE);  
+    ulTaskNotifyTake(pdTRUE, pdMS_TO_TICKS(portMAX_DELAY));
         
-        BNO055_ParseEulerBuffer(&localBNO, &burst_buffer[0], &tmp);
-        BNO055_ParseAccelBuffer(&localBNO, &burst_buffer[14], &acctmp);
+    BNO055_ParseEulerBuffer(&localBNO, &burst_buffer[0], &tmp);
+    BNO055_ParseAccelBuffer(&localBNO, &burst_buffer[14], &acctmp);
+    
+    float raw_heading = 450.0f - tmp.heading;
+    while (raw_heading >= 360.0f) raw_heading -= 360.0f;
+    while (raw_heading < 0.0f)    raw_heading += 360.0f;
         
-        float raw_heading = 450.0f - tmp.heading;
-        while (raw_heading >= 360.0f) raw_heading -= 360.0f;
-        while (raw_heading < 0.0f)    raw_heading += 360.0f;
-        
-        if (!isOffsetSet) {
-            if (initCounter < 50) {
-                initCounter++;
-            } else {
-                yawOffset = raw_heading - 270.0f;
-                isOffsetSet = 1;
-            }
+    if (!isOffsetSet) {
+        if (initCounter < 50) {
+            initCounter++;
+        } else {
+            yawOffset = raw_heading - 270.0f;
+            isOffsetSet = 1;
         }
-        
-        float finalYaw = raw_heading - yawOffset;
-        while (finalYaw >= 360.0f) finalYaw -= 360.0f;
-        while (finalYaw < 0.0f)    finalYaw += 360.0f;
-
-
-
-        portENTER_CRITICAL();
-        lastUpdatedYaw = finalYaw;
-        lastUpdatedRoll = tmp.roll;
-        lastUpdatedPitch = tmp.pitch;
-        lastUpdatedAccelx = acctmp.acc_x; 
-        lastUpdatedAccely = acctmp.acc_y;
-        lastUpdatedAccelz = acctmp.acc_z;
-        portEXIT_CRITICAL();
-      
-   
+    }
     
-    
+    float finalYaw = raw_heading - yawOffset;
+    while (finalYaw >= 360.0f) finalYaw -= 360.0f;
+    while (finalYaw < 0.0f)    finalYaw += 360.0f;
+
+
+
+    portENTER_CRITICAL();
+    lastUpdatedYaw = finalYaw;
+    lastUpdatedRoll = tmp.roll;
+    lastUpdatedPitch = tmp.pitch;
+    lastUpdatedAccelx = acctmp.acc_x - SubESKF_GetBias(); 
+    lastUpdatedAccely = acctmp.acc_y;
+    lastUpdatedAccelz = acctmp.acc_z;
+    portEXIT_CRITICAL();
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
 }
@@ -826,6 +822,8 @@ static void vCommandHandler(void* parameters)
                 portENTER_CRITICAL();
                 lastUpdatedPWM = 1000;
                 portEXIT_CRITICAL();
+
+                HAL_GPIO_WritePin(GPIOA , GPIO_PIN_2 , SET);
                 break;
 
             case YUNUSLAMA:
@@ -893,15 +891,14 @@ static void vCommandHandler(void* parameters)
 
 static void vCommRxTask(void * parameters)
 {
-  uint8_t command = 0;
-  CommandData_t commands[4];
-  int8_t idx = 0;
+
   for(;;)
   {
     static CommandData_t cmd;
     HAL_UART_Receive_DMA(&huart6 , (uint8_t *)&cmd , sizeof(CommandData_t));
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
     xQueueSend(xCmdQueue , &cmd , 0);
+
   }
 }
 
