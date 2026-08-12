@@ -198,7 +198,7 @@ PID_Config_t g_EnginePID =
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 300.0f,
+  .outputLimit   = 400.0f,
   .integralLimit = 100.0f
 };
 
@@ -386,7 +386,7 @@ static void vEnginePidTask(void *pvParameters)
         if (target_distance > 0.0f)
         {
             target_pwm = PID_Calculate(&g_EnginePID , current_dist);
-            target_pwm += 1000;
+            target_pwm += 1200;
         }
         else
         {
