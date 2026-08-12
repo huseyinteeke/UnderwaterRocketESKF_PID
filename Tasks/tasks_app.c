@@ -24,6 +24,7 @@
 #include "stdio.h"
 #include "math.h"
 #include "config.h"
+#include <reent.h>
 
 
 
@@ -167,7 +168,7 @@ PID_Config_t g_DepthPID = {
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 35.0f,
+    .outputLimit   = 15.0f,
     .integralLimit = 30.0f
 
 };
@@ -183,21 +184,21 @@ PID_Config_t g_PitchPID = {
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 40.0f,
+    .outputLimit   = 55.0f,
     .integralLimit = 30.0f
 };
 
 PID_Config_t g_EnginePID = 
 {
-  .Kp = 20,
+  .Kp = 30,
   .Ki = 1,
-  .Kd = 5, 
+  .Kd = 3, 
   .dt = 0.2f,
   .setpoint = 0.0f,
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 800.0f,
+  .outputLimit   = 300.0f,
   .integralLimit = 100.0f
 };
 
@@ -220,6 +221,7 @@ static QueueHandle_t xEngineControlQueue;
 static SemaphoreHandle_t xEskfMutex;
 /* Semaphore Handles */
 static SemaphoreHandle_t xMS5837_BinarySem;   // NS5837 DMA complete signal
+static SemaphoreHandle_t xEskfMutex;
 /* Task Handles */
 static TaskHandle_t xTaskBNO_Read;
 static TaskHandle_t xTaskYawRollControl;
@@ -257,7 +259,7 @@ void System_Tasks_Init(void){
 
     xMS5837_BinarySem   = xSemaphoreCreateBinary();
     xMaestroCmdQueue    = xQueueCreate(10 , sizeof(MaestroMsg_t));
-    xCmdQueue           = xQueueCreate(10 , sizeof(CommandData_t));
+    xCmdQueue           = xQueueCreate(20 , sizeof(CommandData_t));
     xEngineControlQueue = xQueueCreate(10,  sizeof(uint16_t));
     xEskfMutex = xSemaphoreCreateMutex();
 
@@ -357,47 +359,45 @@ void System_Tasks_Init(void){
           TASK_PRIORITY_VELOCITY, 
           &xEnginePIDTask);
           
+
+
        SubESKF_Init();
 
     vTaskStartScheduler();
 }
 
+
 static void vEnginePidTask(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
-    const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
+    const TickType_t xFrequency = pdMS_TO_TICKS(ENGINE_CONTROL_RATE_HZ);
     
-    uint16_t target_pwm = 1000;
+    float target_distance = 0.0f; // Kuyruktan gelen HEDEF (setpoint)
+    uint16_t target_pwm = 1000;   // 1000us = Dur
 
     for(;;)
     {
         float current_dist;
-
-        // X eksenindeki mesafeyi güvenli bir şekilde al
         portENTER_CRITICAL();
         current_dist = lastUpdatedDistancex;
+        target_distance = g_EnginePID.setpoint;
         portEXIT_CRITICAL();
 
-        // 40 metre hedefine ulaşıldı mı kontrolü
-        if(current_dist < 40.0f)
+        if (target_distance > 0.0f)
         {
-            target_pwm = 1700; // 40 metrenin altındaysa ileri gitmeye devam et
+            target_pwm = PID_Calculate(&g_EnginePID , current_dist);
+            target_pwm += 1000;
         }
         else
         {
-            target_pwm = 1000; // 40 metreye ulaşıldı, motorları tamamen durdur
-            portENTER_CRITICAL();
-            g_YawPID.setpoint = 90.0f;
-            portEXIT_CRITICAL();
+            target_pwm = 1000; 
         }
 
-        // Komutu motor kuyruğuna gönder
         xQueueSend(xEngineControlQueue, &target_pwm, 0);
-
-        // Görev periyodunu bekle
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
+
 
 static void vEngineControlTask(void *parameters)
 {
@@ -409,17 +409,19 @@ static void vEngineControlTask(void *parameters)
     
     const uint16_t min_signal = 1000;
     const uint16_t max_signal = 2000;
-    const uint16_t step_size  = 10;
+    const uint16_t step_size  = 5;
 
     vTaskDelay(pdMS_TO_TICKS(2000));
-    
+
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    TickType_t xLastWakeTime = xTaskGetTickCount();
+    const TickType_t xFrequency = pdMS_TO_TICKS(60);
 
     for(;;)
     {
         uint16_t new_command;
         
-        if(xQueueReceive(xEngineControlQueue, &new_command, pdMS_TO_TICKS(500)) == pdTRUE)
+        while(xQueueReceive(xEngineControlQueue, &new_command, 0) == pdPASS)
         {
             if(new_command <= max_signal && new_command >= min_signal)
             {
@@ -447,6 +449,8 @@ static void vEngineControlTask(void *parameters)
 
             __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, currentPWM);
         }
+
+        vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
 
@@ -484,7 +488,20 @@ static void vEskfTask(void* parameters)
     }
 }
 
-
+void EskfBridge_ResetLegPosition(void) 
+{
+    if (xEskfMutex != NULL) {
+        // vEskfTask Step hesaplarken araya girmemek için kilitle
+        if (xSemaphoreTake(xEskfMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
+            EskfResetPosition();       // Sınıf içi x_est = 0.0f
+            lastUpdatedDistancex = 0.0f;   // Task okumasını sıfırla
+            xSemaphoreGive(xEskfMutex);
+        }
+    } else {
+        EskfResetPosition();
+        lastUpdatedDistancex = 0.0f;
+    }
+}
 
 void I2C_Clear(GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin, GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
 {
@@ -535,13 +552,12 @@ static void vBNOTask(void *pvParameters)
 {
   BNO_Status_t status = BNO_TIMEOUT;
   vTaskDelay(2000);
+  ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
   status = BNO055_Init(&localBNO);
 
   while(status != BNO_OK)
   {
-      
       vTaskDelay(50);
-
       status = BNO055_Init(&localBNO);
   }
   
@@ -616,9 +632,8 @@ static void vMS5837Task(void *pvParameters){
     localMS5837.Delay = My_RTOS_Delay_Func;
 
     #ifdef HW_PCB
-    if(MS5837_Init(&localMS5837, &hi2c3) != HAL_OK){
-            SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
-            vTaskDelete(NULL);
+    while(MS5837_Init(&localMS5837, &hi2c3) != HAL_OK){
+            vTaskDelay(500);
     }
     #elif defined(HW_PERTINAKS)
     if(MS5837_Init(&localMS5837, &hi2c1) != HAL_OK){
@@ -719,8 +734,8 @@ static void vDepthPidTask(void *pvParameters)
     desiredPitch = PID_Calculate(&g_DepthPID , current_depth);
 
     portENTER_CRITICAL();
-     g_PitchPID.setpoint = -1 * desiredPitch;
-     portEXIT_CRITICAL();
+    g_PitchPID.setpoint = -1 * desiredPitch;
+    portEXIT_CRITICAL();
 
 
      vTaskDelayUntil(&xLastWakeTime , xFrequency);
@@ -783,80 +798,24 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
         }
     }
 }
-
+volatile bool is_armed = false; 
 
 static uint32_t g_CurrentThrottle = 1000;
-
 static void vCommandHandler(void* parameters)
 {
     static CommandData_t command;
-    static uint16_t target = 1600;
-    xQueueSend(xEngineControlQueue, &target, 100);
     for(;;)
     {
-        xQueueReceive(xCmdQueue, &command, portMAX_DELAY);
-    
+        if (xQueueReceive(xCmdQueue, &command, portMAX_DELAY) != pdPASS) {
+            continue;
+        }
+
+        if (!is_armed) {
+            continue; 
+        }
+
         switch (command.command) 
         {
-            case ARM:
-                if(xTaskBNO_Read != NULL)
-                {
-                    xTaskNotify(xTaskBNO_Read, 0, eNoAction);
-                }
-                
-                if(xEngineControlTask != NULL)
-                {
-                  if(eTaskGetState(xEngineControlTask) == eBlocked)
-                    xTaskNotify(xEngineControlTask, 0, eNoAction);
-                }else {
-                    vTaskResume(xEngineControlTask);
-                }
-                break; 
-
-            case DISARM:
-                if(xEngineControlTask != NULL)
-                {
-                    vTaskSuspend(xEngineControlTask); 
-                }
-                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
-                portENTER_CRITICAL();
-                lastUpdatedPWM = 1000;
-                portEXIT_CRITICAL();
-
-                HAL_GPIO_WritePin(GPIOA , GPIO_PIN_2 , SET);
-                break;
-
-            case YUNUSLAMA:
-                portENTER_CRITICAL();
-                g_PitchPID.Kp = 8.0f;
-                g_PitchPID.Ki = 0.0f;
-                g_PitchPID.Kd = 0.2f;
-                g_PitchPID.dt = 0.02f;
-                g_PitchPID.setpoint      = 1.0f;
-                g_PitchPID.lastError     = 0.0f;
-                g_PitchPID.integralError = 0.0f;
-                g_PitchPID.outputLimit   = 50.0f;
-                g_PitchPID.integralLimit = 30.0f;          
-                g_DepthPID.Kp = 10.0f;
-                g_DepthPID.Ki = 0.0f;
-                g_DepthPID.Kd = 1.0f;
-                g_DepthPID.dt = 0.05f;
-                g_DepthPID.setpoint      = -1.0f;
-                g_DepthPID.lastError     = 0.0f;
-                g_DepthPID.integralError = 0.0f;
-                g_DepthPID.outputLimit   = 50.0f;
-                g_DepthPID.integralLimit = 30.0f;
-                portEXIT_CRITICAL();
-                break;
-
-            case TURN:
-                portENTER_CRITICAL(); 
-                g_YawPID.setpoint = command.value; 
-                lastUpdatedDistancex = 5; 
-                g_EnginePID.setpoint = 0;
-                portEXIT_CRITICAL();
-                break;
-
             case DEPTH:
                 portENTER_CRITICAL(); 
                 g_DepthPID.setpoint = command.value;  
@@ -867,19 +826,81 @@ static void vCommandHandler(void* parameters)
                 portENTER_CRITICAL(); 
                 g_EnginePID.setpoint = command.value;  
                 portEXIT_CRITICAL();
+
+                while (is_armed) {
+                    if (lastUpdatedDistancex >= (command.value - 0.5f)) {
+                        break;
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+                portENTER_CRITICAL(); 
+                g_EnginePID.setpoint = 0;  
+                portEXIT_CRITICAL();
+                
+                if (is_armed) EskfBridge_ResetLegPosition();
                 break;
 
-            case SYSTEM_RESET:
-                HAL_NVIC_SystemReset();
+            case TURN:
+                if (xEnginePIDTask != NULL) {
+                    vTaskSuspend(xEnginePIDTask);
+                }
+
+                static uint16_t turn_thrust_pwm = 1400; 
+                xQueueSend(xEngineControlQueue, &turn_thrust_pwm, 0);
+
+                portENTER_CRITICAL(); 
+                g_YawPID.setpoint = command.value; 
+                portEXIT_CRITICAL();
+
+                while (is_armed) {
+                    float diff = fabsf(lastUpdatedYaw - command.value);
+                    if (diff > 180.0f) diff = 360.0f - diff; 
+                    if (diff <= 2.0f) { 
+                        break;
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+
+                uint16_t stop_pwm = 1000;
+                xQueueSend(xEngineControlQueue, &stop_pwm, 0);
+
+                if (is_armed) EskfBridge_ResetLegPosition();
+
+                if (xEnginePIDTask != NULL) {
+                    vTaskResume(xEnginePIDTask);
+                }
                 break;
-                
+
+            case YUNUSLAMA:
+                portENTER_CRITICAL();
+                g_PitchPID.Kp = 8.0f;
+                g_PitchPID.Ki = 0.0f;
+                g_PitchPID.Kd = 0.2f;
+                g_PitchPID.dt = 0.02f;
+                g_PitchPID.setpoint = 1.0f; 
+                g_DepthPID.setpoint = 0.0f; 
+                g_EnginePID.setpoint = command.value;
+                portEXIT_CRITICAL();
+
+                while (is_armed) {
+                    if (lastUpdatedDepth <= 0.3f || lastUpdatedDistancex >= command.value) {
+                        break;
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+
+                portENTER_CRITICAL();
+                g_PitchPID.setpoint = 0.0f;
+                portEXIT_CRITICAL();
+
+                if (is_armed) EskfBridge_ResetLegPosition();
+                break;
+
             default:
                 break;
         }
     }
 }
-
-
 
 
 
@@ -897,8 +918,49 @@ static void vCommRxTask(void * parameters)
     static CommandData_t cmd;
     HAL_UART_Receive_DMA(&huart6 , (uint8_t *)&cmd , sizeof(CommandData_t));
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
-    xQueueSend(xCmdQueue , &cmd , 0);
 
+    if (cmd.command == ARM) 
+    {
+        is_armed = true;
+
+        if (xTaskBNO_Read != NULL) {
+            xTaskNotify(xTaskBNO_Read, 0, eNoAction);
+        }
+        
+        if (xEngineControlTask != NULL) {
+            if (eTaskGetState(xEngineControlTask) == eBlocked) {
+                xTaskNotify(xEngineControlTask, 0, eNoAction);
+            } else {
+                vTaskResume(xEngineControlTask);
+            }
+        }
+    }
+    else if (cmd.command == DISARM) 
+    {
+        is_armed = false;
+        if (xEngineControlTask != NULL) {
+            vTaskSuspend(xEngineControlTask); 
+        }        
+        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
+        
+        portENTER_CRITICAL();
+        lastUpdatedPWM = 1000;
+        g_EnginePID.setpoint = 0.0f;
+        g_PitchPID.setpoint  = 0.0f;
+        portEXIT_CRITICAL();
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, SET);
+        if (xCmdQueue != NULL) {
+            xQueueReset(xCmdQueue);
+        }
+    }
+    else if (cmd.command == SYSTEM_RESET) 
+    {
+        HAL_NVIC_SystemReset();
+    }
+    else 
+    {
+        xQueueSend(xCmdQueue, &cmd, 0);
+    }
   }
 }
 

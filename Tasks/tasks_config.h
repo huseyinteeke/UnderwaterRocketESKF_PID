@@ -31,6 +31,7 @@
 #define TASK_PRIORITY_Comm            (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_VELOCITY        (tskIDLE_PRIORITY + 2)
 #define TASK_PRIORITY_ESKF            (tskIDLE_PRIORITY + 3)
+#define TASK_PRIORITY_MP              (tskIDLE_PRIORITY + 3)
 
 /*
  ############TASK STACK SIZES#################################3
@@ -44,7 +45,7 @@
 #define TASK_STACK_VELOCITY              512
 #define TASK_STACK_ESKF                 5096
 #define TASK_STACK_ENGINE               1024
-
+#define TASK_STACK_MP                   1024
 /**************************************************************************
  * CONTROL FREQUENCIES
  ***************************************************************************/
@@ -125,6 +126,17 @@ typedef enum __attribute((packed))
     DISARM, 
     YUNUSLAMA
 } Command_t;
+
+
+typedef enum {
+    MISSION_IDLE = 0,
+    MISSION_FETCH_NEXT,
+    STATE_GO_TO,
+    STATE_TURN,
+    STATE_YUNUSLAMA,
+    MISSION_COMPLETE
+} MissionStepState_t;
+
 
 typedef struct __attribute((packed))
 {

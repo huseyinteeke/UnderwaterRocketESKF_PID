@@ -73,15 +73,16 @@ static void BNO_SetPage(BNO055Init_TypeDef_t *dev, uint8_t page) {
  * remap eksenleri için register değerleri
  */
 static const uint8_t REMAP_CONFIG_TABLE[8][2] = {
-		{ 0x21, 0x04 }, // P0 (Default)
-		{ 0x24, 0x00 }, // P1
-		{ 0x24, 0x06 }, // P2
-		{ 0x21, 0x02 }, // P3
-		{ 0x24, 0x03 }, // P4
-		{ 0x21, 0x01 }, // P5
-		{ 0x21, 0x07 }, // P6
-		{ 0x24, 0x05 }  // P7
+    { 0x21, 0x06 }, // P0 (Eskisi: 0x04 -> 0x06)
+    { 0x24, 0x02 }, // P1 (Eskisi: 0x00 -> 0x02)
+    { 0x24, 0x04 }, // P2 (Eskisi: 0x06 -> 0x04)
+    { 0x21, 0x00 }, // P3 (Eskisi: 0x02 -> 0x00)
+    { 0x24, 0x01 }, // P4 (Eskisi: 0x03 -> 0x01)
+    { 0x21, 0x03 }, // P5 (Eskisi: 0x01 -> 0x03)
+    { 0x21, 0x05 }, // P6 (Eskisi: 0x07 -> 0x05)
+    { 0x24, 0x07 }  // P7 (Eskisi: 0x05 -> 0x07)
 };
+
 //********DELAY WRAPPER**************//
 static inline void BNO_Delay(BNO055Init_TypeDef_t *dev , uint32_t ms){
   if(dev->delayCallback != NULL) dev->delayCallback(ms);

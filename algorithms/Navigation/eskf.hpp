@@ -177,6 +177,8 @@ public:
     void setP(const Matrix<STATE_DIM, STATE_DIM>& newP) { P = newP; }
     void setQ(const Matrix<STATE_DIM, STATE_DIM>& newQ) { Q = newQ; }
     void setR(const Matrix<MEASURE_DIM, MEASURE_DIM>& newR) { R = newR; }
+    void reset_pos() {x_est = 0.0f; }
+
 };
 
 #endif /* EKF_EKF_HPP_ */

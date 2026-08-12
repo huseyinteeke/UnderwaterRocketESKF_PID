@@ -44,3 +44,8 @@ void SubESKF_GetVelocity(float* velocity) {
 float SubESKF_GetBias() {
     return mySubESKF.GetBias();
 }
+
+void EskfResetPosition(void)
+{
+    mySubESKF.reset_pos();
+}

@@ -13,6 +13,7 @@ void SubESKF_Step(float hiz_model, float ax, float dt);
 void SubESKF_GetPosition(float* position);
 void SubESKF_GetVelocity(float* velocity);
 float SubESKF_GetBias(void);
+void EskfResetPosition(void);
 
 #ifdef __cplusplus
 }
