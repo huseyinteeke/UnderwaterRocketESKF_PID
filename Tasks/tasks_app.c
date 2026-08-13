@@ -94,7 +94,7 @@ Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
     .gyroUnit  = BNO_GYRO_UNIT_DPS,
     .eulerUnit = BNO_EULER_UNIT_DEG,
     .tempUnit  = BNO_TEMP_UNIT_C,
-    .useStoredCalibration = 0,
+    .useStoredCalibration = 1,
     .calibrationData = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xE0, 0x01}
   };
   Maestro_Handler_t ServoDriver = { &huart3 , FAST  , FAST};
@@ -130,8 +130,7 @@ static float lastUpdatedDistancez;
 static float lastUpdatedStern;
 static float lastUpdatedRudder;
 static float lastUpdatedPWM;
-static float lastUpdatedRPM;
-
+static float lastUpdatedYawContinuous;
 
 /*
  * ************GLOBAL PID VARIABLES******************
@@ -142,16 +141,16 @@ static float lastUpdatedRPM;
  */
 
 PID_Config_t g_YawPID = {
-    .Kp = 3.0f,
+    .Kp = 2.0f,
     .Ki = 0.0f,
     .Kd = 0.05f,
     .dt = 0.02f,
 
-    .setpoint      = 270.0f,
+    .setpoint      = 0.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 55.0f,
+    .outputLimit   = 45.0f,
     .integralLimit = 10.0f
 
 };
@@ -175,7 +174,7 @@ PID_Config_t g_DepthPID = {
 
 
 PID_Config_t g_PitchPID = {
-    .Kp = 3.0f,
+    .Kp = 2.0f,
     .Ki = 0.0f,
     .Kd = 0.05f,
     .dt = 0.02f,
@@ -184,7 +183,7 @@ PID_Config_t g_PitchPID = {
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 55.0f,
+    .outputLimit   = 45.0f,
     .integralLimit = 30.0f
 };
 
@@ -198,7 +197,7 @@ PID_Config_t g_EnginePID =
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 400.0f,
+  .outputLimit   = 600.0f,
   .integralLimit = 100.0f
 };
 
@@ -386,7 +385,7 @@ static void vEnginePidTask(void *pvParameters)
         if (target_distance > 0.0f)
         {
             target_pwm = PID_Calculate(&g_EnginePID , current_dist);
-            target_pwm += 1200;
+            target_pwm += 1000;
         }
         else
         {
@@ -577,11 +576,6 @@ static void vBNOTask(void *pvParameters)
   uint8_t isOffsetSet = 0;
   uint8_t initCounter = 0;
 
-  // Glitch koruması için bayrak ve değişkenler
-  float lastValidRoll = 0.0f;
-  float lastValidPitch = 0.0f;
-  uint8_t isFirstValidRead = 0;
-
   TickType_t xLastWakeTime = xTaskGetTickCount();
   const TickType_t xFrequency = pdMS_TO_TICKS(BNO_READ_PERIOD_MS);
 
@@ -600,7 +594,7 @@ static void vBNOTask(void *pvParameters)
         if (initCounter < 50) {
             initCounter++;
         } else {
-            yawOffset = raw_heading - 270.0f;
+            yawOffset = raw_heading;
             isOffsetSet = 1;
         }
     }
@@ -609,12 +603,32 @@ static void vBNOTask(void *pvParameters)
     while (finalYaw >= 360.0f) finalYaw -= 360.0f;
     while (finalYaw < 0.0f)    finalYaw += 360.0f;
 
+    static float prev_finalYaw = 270.0f; 
+    static float continuousYaw = 270.0f;
+    static uint8_t first_run = 1;
 
+    if (isOffsetSet) {
+        if (first_run) {
+            prev_finalYaw = finalYaw; // Offset oturduğunda ilk referansı al
+            continuousYaw = finalYaw; 
+            first_run = 0;
+        } else {
+            float delta = finalYaw - prev_finalYaw;
+            
+            // 0-360 geçişlerini yakala ve delta'yı lineer hale getir
+            if (delta > 180.0f) delta -= 360.0f;
+            if (delta < -180.0f) delta += 360.0f;
+            
+            continuousYaw += delta;
+            prev_finalYaw = finalYaw;
+        }
+    }
 
     portENTER_CRITICAL();
     lastUpdatedYaw = finalYaw;
     lastUpdatedRoll = tmp.roll;
-    lastUpdatedPitch = tmp.pitch;
+    lastUpdatedPitch = (-1 * tmp.pitch);
+    lastUpdatedYawContinuous = continuousYaw;
     lastUpdatedAccelx = acctmp.acc_x - SubESKF_GetBias(); 
     lastUpdatedAccely = acctmp.acc_y;
     lastUpdatedAccelz = acctmp.acc_z;
@@ -753,7 +767,7 @@ static void vYawPidTask(void *pvParameters){
   xLastWakeTime = xTaskGetTickCount();
 
   for(;;){
-    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYaw);
+    servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYawContinuous);
 
     msg1.channel = CH0;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
@@ -849,12 +863,23 @@ static void vCommandHandler(void* parameters)
                 xQueueSend(xEngineControlQueue, &turn_thrust_pwm, 0);
 
                 portENTER_CRITICAL(); 
-                g_YawPID.setpoint = command.value; 
+                float start_yaw = lastUpdatedYawContinuous; // O anki açıyı al
+                portEXIT_CRITICAL();
+
+                float target_yaw = start_yaw + command.value;
+
+
+                portENTER_CRITICAL(); 
+                g_YawPID.setpoint = target_yaw; 
                 portEXIT_CRITICAL();
 
                 while (is_armed) {
-                    float diff = fabsf(lastUpdatedYaw - command.value);
-                    if (diff > 180.0f) diff = 360.0f - diff; 
+                    float current_yaw_check;
+                    portENTER_CRITICAL();
+                    current_yaw_check = lastUpdatedYawContinuous;
+                    portEXIT_CRITICAL();
+                    float diff = fabsf(current_yaw_check - target_yaw);
+                    
                     if (diff <= 2.0f) { 
                         break;
                     }
@@ -872,26 +897,51 @@ static void vCommandHandler(void* parameters)
                 break;
 
             case YUNUSLAMA:
+                if (xEnginePIDTask != NULL) {
+                    vTaskSuspend(xEnginePIDTask);
+                }
+
+                xQueueReset(xEngineControlQueue);
                 portENTER_CRITICAL();
                 g_PitchPID.Kp = 8.0f;
                 g_PitchPID.Ki = 0.0f;
                 g_PitchPID.Kd = 0.2f;
                 g_PitchPID.dt = 0.02f;
-                g_PitchPID.setpoint = 1.0f; 
-                g_DepthPID.setpoint = 0.0f; 
+                g_DepthPID.setpoint = -10.0f; 
+                g_DepthPID.outputLimit = 40.0f;
                 g_EnginePID.setpoint = command.value;
                 portEXIT_CRITICAL();
 
+
+                static uint16_t yunuslama_thrust_pwm = 1600; 
+                xQueueSend(xEngineControlQueue, &yunuslama_thrust_pwm, 0);
+
+                
+
+                vTaskDelay(7000);
+         
                 while (is_armed) {
-                    if (lastUpdatedDepth <= 0.3f || lastUpdatedDistancex >= command.value) {
+                    if (lastUpdatedDepth <= 0.5f) {
                         break;
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
 
                 portENTER_CRITICAL();
-                g_PitchPID.setpoint = 0.0f;
+                g_PitchPID.Kp = 2.0f;
+                g_PitchPID.Ki = 0.0f;
+                g_PitchPID.Kd = 0.02f;
+                g_PitchPID.dt = 0.02f;
+                g_PitchPID.setpoint = 1.0f; 
+                g_DepthPID.setpoint = 1.0f; 
+                g_DepthPID.outputLimit = 15.0f;
+                g_EnginePID.setpoint = command.value;
                 portEXIT_CRITICAL();
+
+
+                if (xEnginePIDTask != NULL) {
+                    vTaskResume(xEnginePIDTask);
+                }
 
                 if (is_armed) EskfBridge_ResetLegPosition();
                 break;
@@ -949,6 +999,8 @@ static void vCommRxTask(void * parameters)
         g_PitchPID.setpoint  = 0.0f;
         portEXIT_CRITICAL();
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, SET);
+        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, SET);
+
         if (xCmdQueue != NULL) {
             xQueueReset(xCmdQueue);
         }

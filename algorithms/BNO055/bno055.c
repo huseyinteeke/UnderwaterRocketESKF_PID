@@ -150,9 +150,8 @@ BNO_Status_t BNO055_Init(BNO055Init_TypeDef_t *dev) {
 
   uint8_t p_idx = dev->axisRemap;
   p_idx &= 0x07; // Hata koruması
-
-  BNO_WriteReg(dev, BNO055_AXIS_MAP_CNFG, REMAP_CONFIG_TABLE[p_idx][0]);
-  BNO_WriteReg(dev, BNO055_AXIS_MAP_SIGN, REMAP_CONFIG_TABLE[p_idx][1]);
+  BNO_WriteReg(dev, BNO055_AXIS_MAP_CNFG, 0x24); 
+  BNO_WriteReg(dev, BNO055_AXIS_MAP_SIGN, 0x00);
 
   uint8_t trigger = BNO_ReadReg(dev, BNO055_SYS_TRIGGER);
   trigger &= ~0x80;

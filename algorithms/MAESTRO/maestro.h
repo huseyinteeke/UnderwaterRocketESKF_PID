@@ -19,15 +19,15 @@
 #define SERVO_MIN_US	((uint16_t)(1000))	//0 degrees
 #define SERVO_MAX_US	((uint16_t)(2000))  //180 degrees
 
-#define SERVO_MAX_DEG	((int16_t)(130))
-#define SERVO_MIN_DEG	((int16_t)(0))
+#define SERVO_MAX_DEG	((float)(90))
+#define SERVO_MIN_DEG	((float)(0))
 
 #define MAESTRO_ACCEL_MAX (255U)
 #define MAESTRO_ACCEL_MIN (0U)
 
 #define MAESTRO_SPEED_MAX (255U)
 #define MAESTRO_SPEED_MIN (0U)
-#define SERVO_CENTER_DEG  (65U)
+#define SERVO_CENTER_DEG  (45U)
 /*
  * SERIAL SERVO COMMANDS
  * Compact protocol: 0x84, channel number, target low bits, target high bits

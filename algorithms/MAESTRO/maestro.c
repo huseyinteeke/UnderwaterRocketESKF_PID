@@ -9,22 +9,22 @@
 #include "maestro.h"
 
 
-const uint16_t CHANNEL_MAX_US[] = {
-	1904 ,
-	2096,
-	1952,
-	1984,
-	1936,
-	1952
+const float CHANNEL_MAX_US[] = {
+	2014.75f ,
+	1971.25f,
+	1952.0f,
+	1860.0f,
+	1923.0f,
+	1952.0f
 };
 
-const uint16_t CHANNEL_MIN_US[] = {
-	960 , 
-	1024,
-	928,
-	976,
-	896,
-	928
+const float CHANNEL_MIN_US[] = {
+	1114.75f , 
+	1071.25f,
+	928.0f,
+	960.0f,
+	1023.0f,
+	928.0f
 };
 
 
@@ -42,9 +42,9 @@ uint16_t degreetoUs(int16_t degrees , MaestroChannel_TypeDef_t channel){
 	}else if(degrees > SERVO_MAX_DEG){
 		degrees = SERVO_MAX_DEG;
 	}
-	uint32_t range_us = CHANNEL_MAX_US[channel] - CHANNEL_MIN_US[channel];
-  uint32_t range_deg = SERVO_MAX_DEG - SERVO_MIN_DEG;
-  uint32_t result_us = CHANNEL_MIN_US[channel] + ((uint32_t)(degrees - SERVO_MIN_DEG) * range_us) / range_deg;
+	float range_us = CHANNEL_MAX_US[channel] - CHANNEL_MIN_US[channel];
+	float range_deg = SERVO_MAX_DEG - SERVO_MIN_DEG;
+	float result_us = CHANNEL_MIN_US[channel] + ((uint32_t)(degrees - SERVO_MIN_DEG) * range_us) / range_deg;
 	return result_us * 4;
 
 }
