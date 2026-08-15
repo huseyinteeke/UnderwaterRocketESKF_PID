@@ -7,6 +7,7 @@
  #include "bno055.h"
 #include "bno055_func_struct.h"
 #include "cmsis_gcc.h"
+#include "maestro.h"
 #include "stm32f407xx.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h"
@@ -158,28 +159,28 @@ PID_Config_t g_YawPID = {
 
 
 PID_Config_t g_DepthPID = {
-    .Kp = 10.0f,
+    .Kp = 4.0f,
     .Ki = 0.0f,
-    .Kd = 1.0f,
+    .Kd = 0.2f,
     .dt = 0.05f,
 
-    .setpoint      = 1.0f,
+    .setpoint      = 1.7f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 15.0f,
+    .outputLimit   = 11.0f,
     .integralLimit = 30.0f
 
 };
 
 
 PID_Config_t g_PitchPID = {
-    .Kp = 2.0f,
+    .Kp = 5.5f,
     .Ki = 0.0f,
-    .Kd = 0.05f,
+    .Kd = 0.5f,
     .dt = 0.02f,
 
-    .setpoint      = 1.0f,
+    .setpoint      = 0.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
@@ -189,20 +190,48 @@ PID_Config_t g_PitchPID = {
 
 PID_Config_t g_EnginePID = 
 {
-  .Kp = 30,
+  .Kp = 50,
   .Ki = 1,
-  .Kd = 3, 
+  .Kd = 1, 
   .dt = 0.2f,
   .setpoint = 0.0f,
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 600.0f,
-  .integralLimit = 100.0f
+  .outputLimit   = 700.0f,
+  .integralLimit = 200.0f
 };
 
 
 
+PID_Config_t g_RudderRollPID = {
+    .Kp = 2.0f,
+    .Ki = 0.0f,
+    .Kd = 0.05f,
+    .dt = 0.02f,
+
+    .setpoint      = 0.0f,
+    .lastError     = 0.0f,
+    .integralError = 0.0f,
+
+    .outputLimit   = 10.0f,
+    .integralLimit = 30.0f
+};
+
+
+PID_Config_t g_SternRollPID = {
+    .Kp = 2.0f,
+    .Ki = 0.0f,
+    .Kd = 0.05f,
+    .dt = 0.02f,
+
+    .setpoint      = 0.0f,
+    .lastError     = 0.0f,
+    .integralError = 0.0f,
+
+    .outputLimit   = 15.0f,
+    .integralLimit = 30.0f
+};
 
 
 volatile uint8_t g_ARM_STATUS = 0;
@@ -627,7 +656,7 @@ static void vBNOTask(void *pvParameters)
     portENTER_CRITICAL();
     lastUpdatedYaw = finalYaw;
     lastUpdatedRoll = tmp.roll;
-    lastUpdatedPitch = (-1 * tmp.pitch);
+    lastUpdatedPitch = (-1 * (tmp.pitch)) - 2;
     lastUpdatedYawContinuous = continuousYaw;
     lastUpdatedAccelx = acctmp.acc_x - SubESKF_GetBias(); 
     lastUpdatedAccely = acctmp.acc_y;
@@ -706,7 +735,9 @@ static void vPitchPidTask(void *pvParameters){
   static MaestroMsg_t msg2;
   float current_pitch;
   float servo_cmd;
-
+  float roll_cmd;
+  float curr_roll;
+  float servo_roll_cmd;
   #define PITCHCHANNELS 0b1100
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
@@ -714,10 +745,11 @@ static void vPitchPidTask(void *pvParameters){
   for(;;){
      portENTER_CRITICAL();
      current_pitch = lastUpdatedPitch;   
+     curr_roll = lastUpdatedRoll;
      portEXIT_CRITICAL();
 
      servo_cmd = PID_Calculate(&g_PitchPID, current_pitch);
-
+     //servo_roll_cmd = PID_Calculate(&g_SternRollPID , curr_roll);
      msg1.channel = CH4;
      msg1.target = servo_cmd + SERVO_CENTER_DEG;
      xQueueSend(xMaestroCmdQueue, &msg1, 0);
@@ -763,12 +795,14 @@ static void vYawPidTask(void *pvParameters){
   TickType_t xLastWakeTime;
   const TickType_t xFrequency = pdMS_TO_TICKS(PITCH_CONTROL_PERIOD_MS);
 
-  float servo_cmd;
+  float servo_cmd;  
+  float servo_roll_cmd;
+
   xLastWakeTime = xTaskGetTickCount();
 
   for(;;){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYawContinuous);
-
+    servo_roll_cmd = PID_Calculate(&g_RudderRollPID,  lastUpdatedRoll);
     msg1.channel = CH0;
     msg1.target = servo_cmd + SERVO_CENTER_DEG;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
@@ -859,7 +893,9 @@ static void vCommandHandler(void* parameters)
                     vTaskSuspend(xEnginePIDTask);
                 }
 
-                static uint16_t turn_thrust_pwm = 1400; 
+                xQueueReset(xEngineControlQueue);
+
+                static uint16_t turn_thrust_pwm = 1500; 
                 xQueueSend(xEngineControlQueue, &turn_thrust_pwm, 0);
 
                 portENTER_CRITICAL(); 
@@ -902,24 +938,36 @@ static void vCommandHandler(void* parameters)
                 }
 
                 xQueueReset(xEngineControlQueue);
-                portENTER_CRITICAL();
-                g_PitchPID.Kp = 8.0f;
-                g_PitchPID.Ki = 0.0f;
-                g_PitchPID.Kd = 0.2f;
-                g_PitchPID.dt = 0.02f;
-                g_DepthPID.setpoint = -10.0f; 
-                g_DepthPID.outputLimit = 40.0f;
-                g_EnginePID.setpoint = command.value;
-                portEXIT_CRITICAL();
 
 
-                static uint16_t yunuslama_thrust_pwm = 1600; 
+
+                static uint16_t yunuslama_thrust_pwm = 1950; 
                 xQueueSend(xEngineControlQueue, &yunuslama_thrust_pwm, 0);
 
                 
 
-                vTaskDelay(7000);
-         
+                while (is_armed) {
+                    if (lastUpdatedVelocityx >= 3.6f) {
+                        break;
+                    }
+                    vTaskDelay(pdMS_TO_TICKS(50));
+                }
+
+                if (xTaskPitchControl != NULL) {
+                    vTaskSuspend(xTaskPitchControl);
+                }
+
+                MaestroMsg_t msg4 = {
+                    .channel = CH4 , 
+                    .target  = 90 
+                };
+
+                 MaestroMsg_t msg3 = {
+                    .channel = CH3 , 
+                    .target  = 0 
+                };
+                xQueueSend(xMaestroCmdQueue, &msg3 , 0);
+                xQueueSend(xMaestroCmdQueue, &msg4, 0);
                 while (is_armed) {
                     if (lastUpdatedDepth <= 0.5f) {
                         break;
@@ -927,17 +975,9 @@ static void vCommandHandler(void* parameters)
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
 
-                portENTER_CRITICAL();
-                g_PitchPID.Kp = 2.0f;
-                g_PitchPID.Ki = 0.0f;
-                g_PitchPID.Kd = 0.02f;
-                g_PitchPID.dt = 0.02f;
-                g_PitchPID.setpoint = 1.0f; 
-                g_DepthPID.setpoint = 1.0f; 
-                g_DepthPID.outputLimit = 15.0f;
-                g_EnginePID.setpoint = command.value;
-                portEXIT_CRITICAL();
-
+                if (xTaskPitchControl != NULL) {
+                    vTaskResume(xTaskPitchControl);
+                }
 
                 if (xEnginePIDTask != NULL) {
                     vTaskResume(xEnginePIDTask);
