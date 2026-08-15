@@ -55,7 +55,7 @@
 #define MS5837_READ_RATE_HZ             30      // 10Hz depth reading
 #define VELOCITY_RATE_HZ                50
 #define DEPTH_CONTROL_RATE_HZ           20
-#define ENGINE_CONTROL_RATE_HZ           5
+#define ENGINE_CONTROL_RATE_HZ          50
 
 
 #define ENGINE_READ_PERIOD_MS       pdMS_TO_TICKS(1000 / ENGINE_CONTROL_RATE_HZ)
@@ -124,7 +124,8 @@ typedef enum __attribute((packed))
     SYSTEM_RESET, 
     ARM, 
     DISARM, 
-    YUNUSLAMA
+    YUNUSLAMA,
+    VELOCITY
 } Command_t;
 
 

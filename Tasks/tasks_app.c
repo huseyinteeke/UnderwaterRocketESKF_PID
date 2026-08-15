@@ -9,6 +9,7 @@
 #include "cmsis_gcc.h"
 #include "maestro.h"
 #include "stm32f407xx.h"
+#include "stm32f4xx.h"
 #include "stm32f4xx_hal.h"
 #include "stm32f4xx_hal_def.h"
 #include "stm32f4xx_hal_gpio.h"
@@ -26,6 +27,7 @@
 #include "math.h"
 #include "config.h"
 #include <reent.h>
+#include <sys/cdefs.h>
 
 
 
@@ -164,7 +166,7 @@ PID_Config_t g_DepthPID = {
     .Kd = 0.2f,
     .dt = 0.05f,
 
-    .setpoint      = 1.7f,
+    .setpoint      = 1.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
@@ -190,16 +192,16 @@ PID_Config_t g_PitchPID = {
 
 PID_Config_t g_EnginePID = 
 {
-  .Kp = 50,
-  .Ki = 1,
-  .Kd = 1, 
-  .dt = 0.2f,
+  .Kp = 800,
+  .Ki = 85.0f,
+  .Kd = 0.01f, 
+  .dt = 0.02f,
   .setpoint = 0.0f,
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 700.0f,
-  .integralLimit = 200.0f
+  .outputLimit   = 1000.0f,
+  .integralLimit =600.0f
 };
 
 
@@ -263,10 +265,10 @@ static TaskHandle_t xCommTxTask;
 static TaskHandle_t xEskfTask;
 static TaskHandle_t xEngineControlTask;
 static TaskHandle_t xEnginePIDTask;
-
+static TaskHandle_t xDetectWater;
 
 static void vBNOTask(void *pvParameters);
-
+static void vDetectWaterTask(void *pvParameters);
 static void vPitchPidTask(void *pvParameters);
 static void vDepthPidTask(void *pvParameters);
 static void vYawPidTask(void *pvParameters);
@@ -386,7 +388,13 @@ void System_Tasks_Init(void){
           NULL ,
           TASK_PRIORITY_VELOCITY, 
           &xEnginePIDTask);
-          
+        
+        xTaskCreate(vDetectWaterTask , 
+            "Sızdırmazlık tespiti", 
+            1024 , 
+            NULL ,
+            TASK_PRIORITY_VELOCITY,
+            &xDetectWater);
 
 
        SubESKF_Init();
@@ -394,34 +402,39 @@ void System_Tasks_Init(void){
     vTaskStartScheduler();
 }
 
+static void vDetectWaterTask(void *pvParameters)
+{
+    for(;;)
+    {
+        GPIO_PinState status = HAL_GPIO_ReadPin(GPIOA,GPIO_PIN_2); 
+        if(status == GPIO_PIN_SET)
+        {
+            HAL_GPIO_WritePin(GPIOE,GPIO_PIN_7, SET);
+        }else{
+            HAL_GPIO_WritePin(GPIOE,GPIO_PIN_7, RESET);
+        }
+
+        vTaskDelay(100);
+    }
+}
 
 static void vEnginePidTask(void *pvParameters)
 {
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(ENGINE_CONTROL_RATE_HZ);
-    
-    float target_distance = 0.0f; // Kuyruktan gelen HEDEF (setpoint)
-    uint16_t target_pwm = 1000;   // 1000us = Dur
-
+    uint16_t target_pwm = 1000;  
     for(;;)
     {
-        float current_dist;
+        float current_vel;
         portENTER_CRITICAL();
-        current_dist = lastUpdatedDistancex;
-        target_distance = g_EnginePID.setpoint;
+        current_vel = lastUpdatedVelocityx;
         portEXIT_CRITICAL();
-
-        if (target_distance > 0.0f)
-        {
-            target_pwm = PID_Calculate(&g_EnginePID , current_dist);
-            target_pwm += 1000;
-        }
-        else
-        {
-            target_pwm = 1000; 
-        }
-
-        xQueueSend(xEngineControlQueue, &target_pwm, 0);
+        float pid_output = PID_Calculate(&g_EnginePID,  current_vel);
+        
+        target_pwm = (uint16_t)(1000.0f + pid_output);
+        if (target_pwm > 2000) target_pwm = 2000;
+        if (target_pwm < 1000) target_pwm = 1000;
+        xQueueSend(xEngineControlQueue, &target_pwm, 0);        
         vTaskDelayUntil(&xLastWakeTime, xFrequency);
     }
 }
@@ -502,7 +515,6 @@ static void vEskfTask(void* parameters)
         current_pwm = lastUpdatedPWM;
         portEXIT_CRITICAL();
 
-        // 2. Fizik modelini işlet (dt = 0.01 ile 100 Hz'de güncelleniyor)
         pwm_to_velocity(current_pwm, &model_velocity, dt);
 
         SubESKF_Step(model_velocity, currentaccel, dt);
@@ -869,11 +881,7 @@ static void vCommandHandler(void* parameters)
                 g_DepthPID.setpoint = command.value;  
                 portEXIT_CRITICAL();
                 break;
-
             case GO_TO:
-                portENTER_CRITICAL(); 
-                g_EnginePID.setpoint = command.value;  
-                portEXIT_CRITICAL();
 
                 while (is_armed) {
                     if (lastUpdatedDistancex >= (command.value - 0.5f)) {
@@ -889,17 +897,10 @@ static void vCommandHandler(void* parameters)
                 break;
 
             case TURN:
-                if (xEnginePIDTask != NULL) {
-                    vTaskSuspend(xEnginePIDTask);
-                }
 
-                xQueueReset(xEngineControlQueue);
-
-                static uint16_t turn_thrust_pwm = 1500; 
-                xQueueSend(xEngineControlQueue, &turn_thrust_pwm, 0);
 
                 portENTER_CRITICAL(); 
-                float start_yaw = lastUpdatedYawContinuous; // O anki açıyı al
+                float start_yaw = lastUpdatedYawContinuous; 
                 portEXIT_CRITICAL();
 
                 float target_yaw = start_yaw + command.value;
@@ -927,27 +928,19 @@ static void vCommandHandler(void* parameters)
 
                 if (is_armed) EskfBridge_ResetLegPosition();
 
-                if (xEnginePIDTask != NULL) {
-                    vTaskResume(xEnginePIDTask);
-                }
+               
                 break;
 
             case YUNUSLAMA:
-                if (xEnginePIDTask != NULL) {
-                    vTaskSuspend(xEnginePIDTask);
-                }
+            
 
-                xQueueReset(xEngineControlQueue);
-
-
-
-                static uint16_t yunuslama_thrust_pwm = 1950; 
-                xQueueSend(xEngineControlQueue, &yunuslama_thrust_pwm, 0);
-
+                portENTER_CRITICAL();
+                g_EnginePID.setpoint = 3.2f;
+                portEXIT_CRITICAL();
                 
 
                 while (is_armed) {
-                    if (lastUpdatedVelocityx >= 3.6f) {
+                    if (lastUpdatedVelocityx >= 2.8f && lastUpdatedDistancex >= command.value) {
                         break;
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));
@@ -967,7 +960,7 @@ static void vCommandHandler(void* parameters)
                     .target  = 0 
                 };
                 xQueueSend(xMaestroCmdQueue, &msg3 , 0);
-                xQueueSend(xMaestroCmdQueue, &msg4, 0);
+                xQueueSend(xMaestroCmdQueue, &msg4, 0);                
                 while (is_armed) {
                     if (lastUpdatedDepth <= 0.5f) {
                         break;
@@ -979,12 +972,13 @@ static void vCommandHandler(void* parameters)
                     vTaskResume(xTaskPitchControl);
                 }
 
-                if (xEnginePIDTask != NULL) {
-                    vTaskResume(xEnginePIDTask);
-                }
-
                 if (is_armed) EskfBridge_ResetLegPosition();
                 break;
+
+            case VELOCITY:
+                portENTER_CRITICAL(); 
+                g_EnginePID.setpoint = command.value;  
+                portEXIT_CRITICAL();
 
             default:
                 break;
@@ -1039,8 +1033,6 @@ static void vCommRxTask(void * parameters)
         g_PitchPID.setpoint  = 0.0f;
         portEXIT_CRITICAL();
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, SET);
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, SET);
-
         if (xCmdQueue != NULL) {
             xQueueReset(xCmdQueue);
         }

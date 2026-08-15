@@ -15,7 +15,6 @@ static inline float signf(float val) {
     return 0.0f;
 }
 
-// --- HARMANLANMIŞ (GEÇİŞLİ) PWM -> İTKİ DÖNÜŞTÜRÜCÜ ---
 float pwm_to_thrust(float pwm) {
     // 1. Sinyal Sınırlandırma
     if (pwm < 1000.0f) {
@@ -56,14 +55,12 @@ float pwm_to_thrust(float pwm) {
 // --- İTKİDEN HIZA (FİZİK MODELİ) ---
 void pwm_to_velocity(float pwm, float* velocity, float dt) {
     
-    // 1. İTKİ DÜZELTMESİ
     float T_in = pwm_to_thrust(pwm);
     float K_thrust = 0.82f; 
     float T = T_in * K_thrust; 
     
     float v_model_pred = *velocity;
     
-    // 2. SÜRTÜNME HESAPLAMALARI
     float v_sq = v_model_pred * v_model_pred;
     float v_sign = signf(v_model_pred);
     
