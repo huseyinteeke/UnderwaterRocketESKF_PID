@@ -200,7 +200,7 @@ PID_Config_t g_EnginePID =
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 1000.0f,
+  .outputLimit   = 700.0f,
   .integralLimit =600.0f
 };
 
@@ -962,7 +962,8 @@ static void vCommandHandler(void* parameters)
                 xQueueSend(xMaestroCmdQueue, &msg3 , 0);
                 xQueueSend(xMaestroCmdQueue, &msg4, 0);                
                 while (is_armed) {
-                    if (lastUpdatedDepth <= 0.5f) {
+                    if (lastUpdatedDepth <= 0.5f  && lastUpdatedPitch >= 25.0f) {
+                        HAL_GPIO_WritePin(GPIOE ,GPIO_PIN_9 , SET);
                         break;
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));

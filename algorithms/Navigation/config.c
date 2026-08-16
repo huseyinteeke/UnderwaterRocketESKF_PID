@@ -1,14 +1,12 @@
 #include "config.h"
 #include <math.h>
 
-// --- SABİT FİZİKSEL PARAMETRELER ---
-const float RHO = 1000.0f;
+
+const float RHO = 1025.0f;
 const float CD_CFD = 0.22f;
 const float A = 0.0176f;
-// m = 11.209 * 1.05 = 11.76945f
 const float M_TOTAL = 11.76945f; 
 
-// MATLAB'daki sign() fonksiyonunun C karşılığı
 static inline float signf(float val) {
     if (val > 0.0f) return 1.0f;
     if (val < 0.0f) return -1.0f;
@@ -23,36 +21,27 @@ float pwm_to_thrust(float pwm) {
         pwm = 2000.0f;
     }
     
-    // 2. Ölü Bölge Kontrolü
+    // 2. Ölü Bölge Kontrolü (Grafikte 1595-1600 civarında başlıyor ama sen 1050 tutabilirsin)
     if (pwm < 1050.0f) {
         return 0.0f;
     }
     
-    float x = pwm - 1000.0f; // 0 ile 1000 arası
-    float max_thrust_N = 45.0f; 
+    // Grafikteki 24V (6S) verisine göre 2000 PWM'de max itki = 8800 gram = ~88.0 Newton
+    // Ancak 4S pil kullandığımız için voltaj oranını (V_4s / V_24s)^2 buraya yansıtıyoruz.
+    // 14.8V / 24.0V = 0.616 -> Karesi = ~0.38
+    const float VOLTAGE_SCALE_4S = 0.38f; 
     
-    // Harman Ayarları
-    float x_transition = 350.0f; 
-    float T_transition = max_thrust_N * 0.15f; 
-    float T = 0.0f;
+
     
-    if (x <= x_transition) {
-        float ratio = x / x_transition;
-        T = T_transition * powf(ratio, 2.8f);
-    } else {
-        // Üst Bölge (Yüksek Gaz)
-        float x_rem = x - x_transition;
-        float x_rem_max = 1000.0f - x_transition;
-        float ratio_rem = x_rem / x_rem_max;
-        
-        float gamma_high = 2.55f; 
-        T = T_transition + (max_thrust_N - T_transition) * powf(ratio_rem, gamma_high);
-    }
+    float throttle = (pwm - 1000.0f) / 1000.0f; // 0.0 ile 1.0 arası
+
+    float max_thrust_24v_N = 88.0f; 
+    float thrust_24v = max_thrust_24v_N * (throttle * throttle);    
+    float thrust_4s = thrust_24v * VOLTAGE_SCALE_4S;
     
-    return T;
+    return thrust_4s;
 }
 
-// --- İTKİDEN HIZA (FİZİK MODELİ) ---
 void pwm_to_velocity(float pwm, float* velocity, float dt) {
     
     float T_in = pwm_to_thrust(pwm);
