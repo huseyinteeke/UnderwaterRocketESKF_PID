@@ -5,7 +5,7 @@
 const float RHO = 1025.0f;
 const float CD_CFD = 0.22f;
 const float A = 0.0176f;
-const float M_TOTAL = 11.76945f; 
+const float M_TOTAL = 14.86945f; 
 
 static inline float signf(float val) {
     if (val > 0.0f) return 1.0f;
@@ -40,7 +40,7 @@ void pwm_to_velocity(float pwm, float* velocity, float dt) {
     
     float T_in = pwm_to_thrust(pwm);
 
-    float K_thrust = 0.85f; 
+    float K_thrust = 0.55f; 
     float T = T_in * K_thrust; 
     
     float v_model_pred = *velocity;
@@ -50,12 +50,12 @@ void pwm_to_velocity(float pwm, float* velocity, float dt) {
 
     float Fd_hull = 0.5f * RHO * CD_CFD * A * v_sq * v_sign;
     
-    float Cd_lin = 0.06f; 
+    float Cd_lin = 0.15f; 
     float Fd_lin = Cd_lin * v_model_pred;
     
     float Fd_prop = 0.0f;
     if (T <= 0.0f) {
-        float Cp_prop = 0.02f; 
+        float Cp_prop = 0.20f; 
         Fd_prop = 0.5f * RHO * Cp_prop * A * v_sq * v_sign;
     }
     

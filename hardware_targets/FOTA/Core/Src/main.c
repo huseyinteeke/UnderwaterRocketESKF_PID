@@ -106,7 +106,6 @@ int main(void)
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12, GPIO_PIN_SET);
   uint8_t syncByte = 0;
   HAL_StatusTypeDef res = HAL_UART_Receive(&huart6, &syncByte, 1, 2000);
-//ayse
   if(res == HAL_OK &&  syncByte == 0x7F)
   {
 	  SendACK();

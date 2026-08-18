@@ -112,6 +112,7 @@ Maestro_Handler_t ServoDriver = { &huart4 , FAST  , FAST};
 
 
 
+volatile bool is_armed = false; 
 
 
 static float lastUpdatedPressure;
@@ -166,18 +167,18 @@ PID_Config_t g_DepthPID = {
     .Kd = 0.2f,
     .dt = 0.05f,
 
-    .setpoint      = 2.5f,
+    .setpoint      = 3.5f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 15.0f,
+    .outputLimit   = 13.0f,
     .integralLimit = 30.0f
 
 };
 
 
 PID_Config_t g_PitchPID = {
-    .Kp = 5.5f,
+    .Kp = 4.0f,
     .Ki = 0.0f,
     .Kd = 0.5f,
     .dt = 0.02f,
@@ -207,31 +208,31 @@ PID_Config_t g_EnginePID =
 
 
 PID_Config_t g_RudderRollPID = {
-    .Kp = 2.0f,
+    .Kp = 0.0f,
     .Ki = 0.0f,
-    .Kd = 0.05f,
+    .Kd = 0.0f,
     .dt = 0.02f,
 
     .setpoint      = 0.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 15.0f,
+    .outputLimit   = 0.0f,
     .integralLimit = 30.0f
 };
 
 
 PID_Config_t g_SternRollPID = {
-    .Kp = 2.0f,
+    .Kp = 0.0f,
     .Ki = 0.0f,
-    .Kd = 0.05f,
+    .Kd = 0.0f,
     .dt = 0.02f,
 
     .setpoint      = 0.0f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 15.0f,
+    .outputLimit   = 0.0f,
     .integralLimit = 30.0f
 };
 
@@ -300,7 +301,7 @@ void System_Tasks_Init(void){
     xEngineControlQueue = xQueueCreate(10,  sizeof(uint16_t));
     xEskfMutex = xSemaphoreCreateMutex();
 #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
-    HAL_Delay(60000);
+    HAL_Delay(2000);
 #endif
 
     HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 , GPIO_PIN_SET);
@@ -438,9 +439,15 @@ static void vTaskControlFailSafe(void * pvParameters)
         if(lastUpdatedPitch > 60.0f ||
            lastUpdatedDistancex > 100.0f ||
            lastUpdatedPitch < -60.0f ||
-           lastUpdatedRoll > 50.0f ||lastUpdatedRoll < -50.0f 
-            || lastUpdatedDepth > 5.0f)
+           lastUpdatedRoll > 50.0f ||
+           lastUpdatedRoll < -50.0f ||
+            lastUpdatedDepth > 5.0f)
             {
+                static CommandData_t command = {
+                    .command = DISARM ,
+                    .value = 0
+                };
+                xQueueSend(xCmdQueue , &command , 0);
                 HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, SET);
             }
 
@@ -453,7 +460,7 @@ static void vTaskControlFailSafe(void * pvParameters)
 #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
 static void vTaskDelayer(void *pvParameters)
 {
-    vTaskDelay(pdMS_TO_TICKS(30000));
+    vTaskDelay(pdMS_TO_TICKS(3000));
     xTaskNotify(xTaskBNO_Read, 0, eNoAction);
     if (xTaskMS5837 != NULL) {
         xTaskNotify(xTaskMS5837, 0, eNoAction);
@@ -461,31 +468,40 @@ static void vTaskDelayer(void *pvParameters)
     xTaskNotify(xEskfTask,           0, eNoAction);
     xTaskNotify(xCommRxTask,         0, eNoAction);
     xTaskNotify(xCommTxTask,         0, eNoAction);
-
+    xTaskNotify(xEngineControlTask,  0, eNoAction);
     #if defined(HW_ILK_GOREV)
+    portENTER_CRITICAL();
+    is_armed = true;
+    portEXIT_CRITICAL();
     static CommandData_t commandList[] = {
+        {.command = ARM , .value = 0},
         {.command = VELOCITY , .value = 3},
         {.command = GO_TO , .value = 50},
-        {.command = TURN  , .value = 180},
-        {.command = GO_TO , .value = 50}
+        {.command = DISARM , .value = 0}
     };
 
-    for(int i = 0 ; i < (sizeof(commandList) / sizeof(commandList)) ; i++)
+    for(int i = 0 ; i < 3; i++)
     {
         xQueueSend(xCmdQueue , &(commandList[i]), 0);
     }
+
     #endif
     
     #if defined(HW_IKINCI_GOREV)
-        static CommandData_t commandList[] = {
-        {.command = YUNUSLAMA , .value = 30}
+    portENTER_CRITICAL();
+    is_armed = true;
+    portEXIT_CRITICAL();
+    static CommandData_t commandList[] = {
+        {.command = ARM , .value = 0},
+        {.command = VELOCITY , .value = 2.0},
+        {.command = YUNUSLAMA , .value = 5},
+        {.command =DISARM , .value = 0}
     };
 
-    for(int i = 0 ; i < (sizeof(commandList) / sizeof(commandList)) ; i++)
+    for(int i = 0 ; i < 5 ; i++)
     {
         xQueueSend(xCmdQueue , &(commandList[i]), 0);
     }
-
     #endif
     
     vTaskDelete(NULL);
@@ -1000,7 +1016,6 @@ static void vMaestroGatekeeperTask(void *pvParameters) {
         }
     }
 }
-volatile bool is_armed = false; 
 
 static uint32_t g_CurrentThrottle = 1000;
 static void vCommandHandler(void* parameters)
@@ -1012,12 +1027,56 @@ static void vCommandHandler(void* parameters)
             continue;
         }
 
-        if (!is_armed) {
-            continue; 
-        }
+
 
         switch (command.command) 
         {
+             case ARM: 
+        
+                is_armed = true;
+
+                #if defined (HW_PCB) || (defined(HW_PERTINANKS))
+                if (xTaskBNO_Read != NULL) {
+                    xTaskNotify(xTaskBNO_Read, 0, eNoAction);
+                }
+                
+                if (xEngineControlTask != NULL) {
+                    if (eTaskGetState(xEngineControlTask) == eBlocked) {
+                        xTaskNotify(xEngineControlTask, 0, eNoAction);
+                    } else {
+                        vTaskResume(xEngineControlTask);
+                    }
+                }
+                #endif
+                break;
+            case DISARM:
+        
+                is_armed = false;
+                portENTER_CRITICAL();
+                g_EnginePID.setpoint = 0.0f;
+                portEXIT_CRITICAL();
+
+                vTaskSuspend(xEngineControlTask);
+                __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
+                portENTER_CRITICAL();
+                lastUpdatedPWM = 1000;
+                portEXIT_CRITICAL();
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, SET);
+                if (xCmdQueue != NULL) {
+                    xQueueReset(xCmdQueue);
+                }
+                break;
+            case SYSTEM_RESET:
+                HAL_NVIC_SystemReset();
+                break;
+            default:
+                break;
+            }
+
+            if(!is_armed) continue;
+
+            switch (command.command) 
+            {
             case DEPTH:
                 portENTER_CRITICAL(); 
                 g_DepthPID.setpoint = command.value;  
@@ -1069,15 +1128,8 @@ static void vCommandHandler(void* parameters)
                 break;
 
             case YUNUSLAMA:
-            
-                
-                portENTER_CRITICAL();
-                g_EnginePID.setpoint = 4.5f;
-                portEXIT_CRITICAL();
-                
-
                 while (is_armed) {
-                    if (lastUpdatedVelocityx >= 2.8f && lastUpdatedDistancex >= command.value) {
+                    if (lastUpdatedDistancex >= command.value) {
                         break;
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));
@@ -1099,9 +1151,9 @@ static void vCommandHandler(void* parameters)
                 xQueueSend(xMaestroCmdQueue, &msg3 , 0);
                 xQueueSend(xMaestroCmdQueue, &msg4, 0);      
                 TickType_t xStartTick = xTaskGetTickCount();
-                const TickType_t xTimeoutTicks = pdMS_TO_TICKS(7000);
+                const TickType_t xTimeoutTicks = pdMS_TO_TICKS(5000);
                 while (is_armed) {
-                    if (lastUpdatedDepth <= 0.2f  && lastUpdatedPitch >= 25.0f) {
+                    if (lastUpdatedDepth <= 0.4f) {
                         HAL_GPIO_WritePin(GPIOE ,GPIO_PIN_9 , SET);
                         vTaskDelay(3000);
                         HAL_GPIO_WritePin(GPIOE ,GPIO_PIN_9 , RESET);
@@ -1109,20 +1161,12 @@ static void vCommandHandler(void* parameters)
                     }
 
                     if ((xTaskGetTickCount() - xStartTick) >= xTimeoutTicks) {
-                        static CommandData_t new_cmd1 = {
-                            .command = TURN, 
-                            .value   = 180
-                        };
-                        static CommandData_t new_cmd2 = {
-                            .command = GO_TO,
-                            .value   = 30   
-                        };
-                        xQueueSend(xCmdQueue, &new_cmd1  , 0);
-                        xQueueSend(xCmdQueue , &new_cmd2 , 0);
                         break; 
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
+
+
 
                 if (xTaskPitchControl != NULL) {
                     vTaskResume(xTaskPitchControl);
@@ -1159,44 +1203,8 @@ static void vCommRxTask(void * parameters)
     #endif
     static CommandData_t cmd;
     HAL_UART_Receive_DMA(&huart6 , (uint8_t *)&cmd , sizeof(CommandData_t));
-    ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
-
-    if (cmd.command == ARM) 
-    {
-        is_armed = true;
-
-        if (xTaskBNO_Read != NULL) {
-            xTaskNotify(xTaskBNO_Read, 0, eNoAction);
-        }
-        
-        if (xEngineControlTask != NULL) {
-            if (eTaskGetState(xEngineControlTask) == eBlocked) {
-                xTaskNotify(xEngineControlTask, 0, eNoAction);
-            } else {
-                vTaskResume(xEngineControlTask);
-            }
-        }
-    }
-    else if (cmd.command == DISARM) 
-    {
-        is_armed = false;
-        portENTER_CRITICAL();
-        g_EnginePID.setpoint = 0.0f;
-        portEXIT_CRITICAL();
-
-        HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, SET);
-        if (xCmdQueue != NULL) {
-            xQueueReset(xCmdQueue);
-        }
-    }
-    else if (cmd.command == SYSTEM_RESET) 
-    {
-        HAL_NVIC_SystemReset();
-    }
-    else 
-    {
-        xQueueSend(xCmdQueue, &cmd, 0);
-    }
+    ulTaskNotifyTake(pdTRUE , portMAX_DELAY); 
+    xQueueSend(xCmdQueue, &cmd, 0);
   }
 }
 

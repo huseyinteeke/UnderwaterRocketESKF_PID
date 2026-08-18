@@ -137,6 +137,7 @@ int main(void)
   MX_I2C3_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3 , RESET);
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 10, 0);
 
 
