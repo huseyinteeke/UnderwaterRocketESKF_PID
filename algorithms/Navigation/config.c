@@ -40,7 +40,7 @@ void pwm_to_velocity(float pwm, float* velocity, float dt) {
     
     float T_in = pwm_to_thrust(pwm);
 
-    float K_thrust = 0.70f; 
+    float K_thrust = 0.85f; 
     float T = T_in * K_thrust; 
     
     float v_model_pred = *velocity;
@@ -50,7 +50,7 @@ void pwm_to_velocity(float pwm, float* velocity, float dt) {
 
     float Fd_hull = 0.5f * RHO * CD_CFD * A * v_sq * v_sign;
     
-    float Cd_lin = 0.15f; 
+    float Cd_lin = 0.06f; 
     float Fd_lin = Cd_lin * v_model_pred;
     
     float Fd_prop = 0.0f;

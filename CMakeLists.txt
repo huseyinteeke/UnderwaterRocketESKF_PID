@@ -13,46 +13,51 @@ endif()
 if(NOT CMAKE_CXX_COMPILER)
     set(CMAKE_CXX_COMPILER "C:/ST/STM32CubeIDE_2.2.0/STM32CubeIDE/plugins/com.st.stm32cube.ide.mcu.externaltools.gnu-tools-for-stm32.14.3.rel1.win32_1.0.100.202602081740/tools/bin/arm-none-eabi-g++.exe")
 endif()
+
+# ==========================================
 # 1. DONANIM VE BUILD KONFİGÜRASYONU
 # ==========================================
 # Donanım hedefi seçimi (Varsayılan: pertinaks)
-set(HW_TARGET "pertinaks" CACHE STRING "Target hardware: pertinaks, pcb, fota")
+set(HW_TARGET "pertinaks" CACHE STRING "Target hardware: pertinaks, pcb, fota, ILK_GOREV, IKINCI_GOREV")
 
 # Seçilen donanıma göre dizinleri ve Preprocessor makrolarını belirle
 if(HW_TARGET STREQUAL "pertinaks")
     set(TARGET_DIR "hardware_targets/pertinanks")
-    set(HW_DEFINE "HW_PERTINAKS")
+    set(HW_DEFINE "HW_PERTINAKS=1")
 elseif(HW_TARGET STREQUAL "pcb")
     set(TARGET_DIR "hardware_targets/pcb")
-    set(HW_DEFINE "HW_PCB")
+    set(HW_DEFINE "HW_PCB=1")
 elseif(HW_TARGET STREQUAL "fota")
     set(TARGET_DIR "hardware_targets/FOTA")
-    set(HW_DEFINE "HW_FOTA")
+    set(HW_DEFINE "HW_FOTA=1")
+elseif(HW_TARGET STREQUAL "ILK_GOREV")
+    set(TARGET_DIR "hardware_targets/pcb")
+    # BURASI DÜZELTİLDİ: Hem PCB donanımı hem de İlk Görev makrosu birlikte yollanıyor
+    set(HW_DEFINE "HW_PCB=1" "HW_ILK_GOREV=1")
+elseif(HW_TARGET STREQUAL "IKINCI_GOREV")
+    set(TARGET_DIR "hardware_targets/pcb")
+    # BURASI DÜZELTİLDİ: Hem PCB donanımı hem de İkinci Görev makrosu birlikte yollanıyor
+    set(HW_DEFINE "HW_PCB=1" "HW_IKINCI_GOREV=1")
 else()
-    message(FATAL_ERROR "Geçersiz HW_TARGET seçildi! 'pertinaks', 'pcb' veya 'fota' kullanın.")
+    message(FATAL_ERROR "Geçersiz HW_TARGET seçildi! 'pertinaks', 'pcb', 'fota', 'ILK_GOREV' veya 'IKINCI_GOREV' kullanın.")
 endif()
 
 message(STATUS "==========================================")
 message(STATUS "Aktif Donanım Hedefi : ${HW_TARGET}")
 message(STATUS "Derleme Tipi (Build) : ${CMAKE_BUILD_TYPE}")
-message(STATUS "Preprocessor Makro   : ${HW_DEFINE}=1")
-message(STATUS "Hedef Klasör       : ${TARGET_DIR}")
+message(STATUS "Preprocessor Makroları: ${HW_DEFINE}")
+message(STATUS "Hedef Klasör         : ${TARGET_DIR}")
 message(STATUS "==========================================")
 
-# ==========================================
-# 2. İLGİLİ DONANIMIN KENDİ CMAKE DOSYASINI ÇALIŞTIR
-# ==========================================
-# add_subdirectory çağrıldığı anda içerideki alt CMake dosyası 
-# 'underwater_rocket' (firmware) hedefimi oluşturacak ve derleme makrosunu oraya işleyeceğiz.
 # ==========================================
 # 2. İLGİLİ DONANIMIN KENDİ CMAKE DOSYASINI ÇALIŞTIR
 # ==========================================
 add_subdirectory(${TARGET_DIR})
 
 if(TARGET underwater_rocket)
-    target_compile_definitions(underwater_rocket PRIVATE ${HW_DEFINE}=1)
+    target_compile_definitions(underwater_rocket PRIVATE ${HW_DEFINE})
 elseif(TARGET firmware)
-    target_compile_definitions(firmware PRIVATE ${HW_DEFINE}=1)
+    target_compile_definitions(firmware PRIVATE ${HW_DEFINE})
 else()
     message(WARNING "Hedef bulunamadı, makro elle eklenemedi!")
 endif()

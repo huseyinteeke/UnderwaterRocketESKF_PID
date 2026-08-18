@@ -139,16 +139,11 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_NVIC_SetPriority(DMA2_Stream7_IRQn, 10, 0);
 
-  for (volatile uint32_t i = 0; i < 200000; i++) {
-      __NOP();
-  }
 
 
 
 
- HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 , GPIO_PIN_SET);
- HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13 , GPIO_PIN_SET);
- HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10 , GPIO_PIN_SET);
+
  System_Tasks_Init();
   //if the control comes here, then the launch of the scheduler hasA failed due to
   //insufficient memory in heap

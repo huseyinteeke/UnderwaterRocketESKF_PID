@@ -166,11 +166,11 @@ PID_Config_t g_DepthPID = {
     .Kd = 0.2f,
     .dt = 0.05f,
 
-    .setpoint      = 1.0f,
+    .setpoint      = 2.5f,
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 11.0f,
+    .outputLimit   = 15.0f,
     .integralLimit = 30.0f
 
 };
@@ -200,7 +200,7 @@ PID_Config_t g_EnginePID =
   .lastError     = 0.0f,
   .integralError = 0.0f,
 
-  .outputLimit   = 700.0f,
+  .outputLimit   = 1000.0f,
   .integralLimit =600.0f
 };
 
@@ -216,7 +216,7 @@ PID_Config_t g_RudderRollPID = {
     .lastError     = 0.0f,
     .integralError = 0.0f,
 
-    .outputLimit   = 10.0f,
+    .outputLimit   = 15.0f,
     .integralLimit = 30.0f
 };
 
@@ -266,6 +266,10 @@ static TaskHandle_t xEskfTask;
 static TaskHandle_t xEngineControlTask;
 static TaskHandle_t xEnginePIDTask;
 static TaskHandle_t xDetectWater;
+#if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+static TaskHandle_t xTaskDelayer;
+#endif
+static TaskHandle_t xControlFailSafe;
 
 static void vBNOTask(void *pvParameters);
 static void vDetectWaterTask(void *pvParameters);
@@ -280,7 +284,10 @@ static void vCommTxTask(void* parameters);
 static void vCommandHandler(void* parameters);
 static void vEskfTask(void* parameters);
 static void vEnginePidTask(void *pvParameters);
-
+#if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+static void vTaskDelayer(void *pvParameters);
+#endif
+static void vTaskControlFailSafe(void * pvParameters);
 /*
  * ################GLOBAL SYSTEM INIT FUNCTION######################
  */
@@ -292,8 +299,13 @@ void System_Tasks_Init(void){
     xCmdQueue           = xQueueCreate(20 , sizeof(CommandData_t));
     xEngineControlQueue = xQueueCreate(10,  sizeof(uint16_t));
     xEskfMutex = xSemaphoreCreateMutex();
+#if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+    HAL_Delay(60000);
+#endif
 
-
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_12 , GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_13 , GPIO_PIN_SET);
+    HAL_GPIO_WritePin(GPIOC, GPIO_PIN_10 , GPIO_PIN_SET);
     xTaskCreate(vBNOTask ,
                 "BNO_READ" ,
                 TASK_STACK_BNO_READ ,
@@ -396,11 +408,91 @@ void System_Tasks_Init(void){
             TASK_PRIORITY_VELOCITY,
             &xDetectWater);
 
+        
+        xTaskCreate(vTaskControlFailSafe , 
+            "FailSafe check", 
+            1024 , 
+            NULL ,
+            TASK_PRIORITY_DELAYER,
+            &xControlFailSafe);
+        
+        #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+        xTaskCreate(vTaskDelayer, 
+                "Task Delayer", 
+                1024 , 
+                NULL ,
+                TASK_PRIORITY_DELAYER , 
+                &xTaskDelayer);
+        #endif
+
 
        SubESKF_Init();
 
     vTaskStartScheduler();
 }
+
+static void vTaskControlFailSafe(void * pvParameters)
+{
+    for(;;)
+    {
+        if(lastUpdatedPitch > 60.0f ||
+           lastUpdatedDistancex > 100.0f ||
+           lastUpdatedPitch < -60.0f ||
+           lastUpdatedRoll > 50.0f ||lastUpdatedRoll < -50.0f 
+            || lastUpdatedDepth > 5.0f)
+            {
+                HAL_GPIO_WritePin(GPIOA, GPIO_PIN_3, SET);
+            }
+
+        vTaskDelay(100);
+    }
+}
+
+
+
+#if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+static void vTaskDelayer(void *pvParameters)
+{
+    vTaskDelay(pdMS_TO_TICKS(30000));
+    xTaskNotify(xTaskBNO_Read, 0, eNoAction);
+    if (xTaskMS5837 != NULL) {
+        xTaskNotify(xTaskMS5837, 0, eNoAction);
+    }
+    xTaskNotify(xEskfTask,           0, eNoAction);
+    xTaskNotify(xCommRxTask,         0, eNoAction);
+    xTaskNotify(xCommTxTask,         0, eNoAction);
+
+    #if defined(HW_ILK_GOREV)
+    static CommandData_t commandList[] = {
+        {.command = VELOCITY , .value = 3},
+        {.command = GO_TO , .value = 50},
+        {.command = TURN  , .value = 180},
+        {.command = GO_TO , .value = 50}
+    };
+
+    for(int i = 0 ; i < (sizeof(commandList) / sizeof(commandList)) ; i++)
+    {
+        xQueueSend(xCmdQueue , &(commandList[i]), 0);
+    }
+    #endif
+    
+    #if defined(HW_IKINCI_GOREV)
+        static CommandData_t commandList[] = {
+        {.command = YUNUSLAMA , .value = 30}
+    };
+
+    for(int i = 0 ; i < (sizeof(commandList) / sizeof(commandList)) ; i++)
+    {
+        xQueueSend(xCmdQueue , &(commandList[i]), 0);
+    }
+
+    #endif
+    
+    vTaskDelete(NULL);
+}
+#endif
+
+
 
 static void vDetectWaterTask(void *pvParameters)
 {
@@ -454,7 +546,9 @@ static void vEngineControlTask(void *parameters)
 
     vTaskDelay(pdMS_TO_TICKS(2000));
 
+    #ifdef HW_PCB
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+    #endif
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(60);
 
@@ -498,6 +592,9 @@ static void vEngineControlTask(void *parameters)
 
 static void vEskfTask(void* parameters)
 {
+#if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)    
+    ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+#endif
     TickType_t xLastWakeTime = xTaskGetTickCount();
     const TickType_t xFrequency = pdMS_TO_TICKS(10); // 100 Hz loop
     const float dt = 0.01f;
@@ -531,7 +628,6 @@ static void vEskfTask(void* parameters)
 void EskfBridge_ResetLegPosition(void) 
 {
     if (xEskfMutex != NULL) {
-        // vEskfTask Step hesaplarken araya girmemek için kilitle
         if (xSemaphoreTake(xEskfMutex, pdMS_TO_TICKS(20)) == pdTRUE) {
             EskfResetPosition();       // Sınıf içi x_est = 0.0f
             lastUpdatedDistancex = 0.0f;   // Task okumasını sıfırla
@@ -542,44 +638,6 @@ void EskfBridge_ResetLegPosition(void)
         lastUpdatedDistancex = 0.0f;
     }
 }
-
-void I2C_Clear(GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin, GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
-{
-    GPIO_InitTypeDef GPIO_InitStruct = {0};
-    
-    GPIO_InitStruct.Pin = SCL_Pin | SDA_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-    
-    HAL_GPIO_Init(SCL_Port, &GPIO_InitStruct); // Not: Aynı porttalarsa tek seferde, farklı porttalarsa ayrı ayrı init edilmeli
-    
-    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
-    vTaskDelay(2);
-
-    for (int i = 0; i < 9; i++) 
-    {
-        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_RESET);
-        vTaskDelay(2); // vTaskDelay milisaniye cinsinden gecikme sağlar
-        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
-        vTaskDelay(2);
-        
-        if (HAL_GPIO_ReadPin(SDA_Port, SDA_Pin) == GPIO_PIN_SET) {
-            break;
-        }
-    }
-
-    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_RESET);
-    vTaskDelay(2);
-    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
-    vTaskDelay(2);
-    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
-    vTaskDelay(2);
-}
-
-
-
 
 
 
@@ -668,7 +726,7 @@ static void vBNOTask(void *pvParameters)
     portENTER_CRITICAL();
     lastUpdatedYaw = finalYaw;
     lastUpdatedRoll = tmp.roll;
-    lastUpdatedPitch = (-1 * (tmp.pitch)) - 2;
+    lastUpdatedPitch = (-1 * (tmp.pitch));
     lastUpdatedYawContinuous = continuousYaw;
     lastUpdatedAccelx = acctmp.acc_x - SubESKF_GetBias(); 
     lastUpdatedAccely = acctmp.acc_y;
@@ -682,15 +740,98 @@ static void vBNOTask(void *pvParameters)
 /********************************************************************************
  **********************************vMS5837 Read Task***********************
  ******************************************************************************/
+
+ 
+void I2C_Clear(I2C_HandleTypeDef *hi2c, GPIO_TypeDef *SCL_Port, uint16_t SCL_Pin, GPIO_TypeDef *SDA_Port, uint16_t SDA_Pin)
+{
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+    // 1. Önce STM32'nin I2C donanımını kapat (Pinleri serbest bıraksın)
+    HAL_I2C_DeInit(hi2c);
+
+    // 2. SCL Pinini manuel kontrol için Output ayarla (Sadece SCL_Pin!)
+    GPIO_InitStruct.Pin = SCL_Pin;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(SCL_Port, &GPIO_InitStruct);
+
+    // 3. SDA Pinini manuel kontrol için Output ayarla (Sadece SDA_Pin!)
+    GPIO_InitStruct.Pin = SDA_Pin;
+    HAL_GPIO_Init(SDA_Port, &GPIO_InitStruct);
+
+    // 4. İkisini de başlangıçta HIGH durumuna çek
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
+    vTaskDelay(2); 
+
+    // 5. 9 Clock Darbesi (Sensörü bırakmaya zorluyoruz)
+    for (int i = 0; i < 9; i++) 
+    {
+        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_RESET);
+        vTaskDelay(2);
+        HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+        vTaskDelay(2);
+        
+        if (HAL_GPIO_ReadPin(SDA_Port, SDA_Pin) == GPIO_PIN_SET) {
+            break; // Sensör hattı bıraktı, döngüden çık
+        }
+    }
+
+    // 6. STOP Kondisyonu Üretimi
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_RESET);
+    vTaskDelay(2);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_RESET);
+    vTaskDelay(2);
+    HAL_GPIO_WritePin(SCL_Port, SCL_Pin, GPIO_PIN_SET);
+    vTaskDelay(2);
+    HAL_GPIO_WritePin(SDA_Port, SDA_Pin, GPIO_PIN_SET);
+    vTaskDelay(2);
+
+    // 7. İşlemcinin içindeki I2C3 modülünü şokla (Resetle)
+    if(hi2c->Instance == I2C3) {
+        __HAL_RCC_I2C3_FORCE_RESET();
+        vTaskDelay(2);
+        __HAL_RCC_I2C3_RELEASE_RESET();
+    }
+
+    // 8. PİNLERİ I2C DONANIMINA GERİ VER (EN ÖNEMLİ KISIM)
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    // DİKKAT: İşlemcinin serisine göre Alternate değerini ayarlamalısın.
+    // PA8 ve PC9 genelde STM32F4 serisinde I2C3 için AF4'e bağlıdır. 
+    // İşlemcin F4 değilse datasheet'ten GPIO Alternate Function tablosuna bak.
+    GPIO_InitStruct.Alternate = GPIO_AF4_I2C3; 
+    
+    GPIO_InitStruct.Pin = SCL_Pin;
+    HAL_GPIO_Init(SCL_Port, &GPIO_InitStruct);
+    
+    GPIO_InitStruct.Pin = SDA_Pin;
+    HAL_GPIO_Init(SDA_Port, &GPIO_InitStruct);
+
+    // 9. I2C3 modülünü tekrar ayağa kaldır (CubeMX Init fonksiyonunu çalıştırır)
+    HAL_I2C_Init(hi2c);
+}
+
+
+
+
+
+
+ 
 static void vMS5837Task(void *pvParameters){
     static MS5837_t localMS5837;
     localMS5837.Delay = My_RTOS_Delay_Func;
+    #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+    ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+    #endif
 
-    #ifdef HW_PCB
+    #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV) ||defined(HW_PCB)
     while(MS5837_Init(&localMS5837, &hi2c3) != HAL_OK){
             vTaskDelay(500);
+            I2C_Clear(&hi2c3 , GPIOA, GPIO_PIN_8 , GPIOC , GPIO_PIN_9);
     }
-    #elif defined(HW_PERTINAKS)
+    #elif defined(HW_PERTINAKS) || defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV) 
     if(MS5837_Init(&localMS5837, &hi2c1) != HAL_OK){
             SEGGER_SYSVIEW_Error("MS5837 INIT FAIL");
             vTaskDelete(NULL);
@@ -760,14 +901,15 @@ static void vPitchPidTask(void *pvParameters){
      curr_roll = lastUpdatedRoll;
      portEXIT_CRITICAL();
 
+
      servo_cmd = PID_Calculate(&g_PitchPID, current_pitch);
-     //servo_roll_cmd = PID_Calculate(&g_SternRollPID , curr_roll);
-     msg1.channel = CH4;
-     msg1.target = servo_cmd + SERVO_CENTER_DEG;
+     servo_roll_cmd = PID_Calculate(&g_SternRollPID , curr_roll);
+     msg1.channel = CH3;
+     msg1.target = servo_cmd + SERVO_CENTER_DEG + servo_roll_cmd;
      xQueueSend(xMaestroCmdQueue, &msg1, 0);
    
-     msg2.channel = CH3;
-     msg2.target = SERVO_CENTER_DEG - servo_cmd;
+     msg2.channel = CH4;
+     msg2.target = SERVO_CENTER_DEG - servo_cmd + servo_roll_cmd;
      xQueueSend(xMaestroCmdQueue, &msg2, 0);
      vTaskDelayUntil(&xLastWakeTime , xFrequency);
   }
@@ -816,11 +958,11 @@ static void vYawPidTask(void *pvParameters){
     servo_cmd = PID_Calculate(&g_YawPID , lastUpdatedYawContinuous);
     servo_roll_cmd = PID_Calculate(&g_RudderRollPID,  lastUpdatedRoll);
     msg1.channel = CH0;
-    msg1.target = servo_cmd + SERVO_CENTER_DEG;
+    msg1.target = servo_cmd + SERVO_CENTER_DEG + servo_roll_cmd;
     xQueueSend(xMaestroCmdQueue, &msg1, 0);
 
     msg2.channel = CH1;
-    msg2.target = SERVO_CENTER_DEG - servo_cmd;
+    msg2.target = SERVO_CENTER_DEG - servo_cmd + servo_roll_cmd;
     xQueueSend(xMaestroCmdQueue, &msg2, 0);
 
     vTaskDelayUntil(&xLastWakeTime , xFrequency);
@@ -889,9 +1031,6 @@ static void vCommandHandler(void* parameters)
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
-                portENTER_CRITICAL(); 
-                g_EnginePID.setpoint = 0;  
-                portEXIT_CRITICAL();
                 
                 if (is_armed) EskfBridge_ResetLegPosition();
                 break;
@@ -923,8 +1062,6 @@ static void vCommandHandler(void* parameters)
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
 
-                uint16_t stop_pwm = 1000;
-                xQueueSend(xEngineControlQueue, &stop_pwm, 0);
 
                 if (is_armed) EskfBridge_ResetLegPosition();
 
@@ -933,9 +1070,9 @@ static void vCommandHandler(void* parameters)
 
             case YUNUSLAMA:
             
-
+                
                 portENTER_CRITICAL();
-                g_EnginePID.setpoint = 3.2f;
+                g_EnginePID.setpoint = 4.5f;
                 portEXIT_CRITICAL();
                 
 
@@ -951,20 +1088,38 @@ static void vCommandHandler(void* parameters)
                 }
 
                 MaestroMsg_t msg4 = {
-                    .channel = CH4 , 
+                    .channel = CH3 , 
                     .target  = 90 
                 };
 
                  MaestroMsg_t msg3 = {
-                    .channel = CH3 , 
+                    .channel = CH4 , 
                     .target  = 0 
                 };
                 xQueueSend(xMaestroCmdQueue, &msg3 , 0);
-                xQueueSend(xMaestroCmdQueue, &msg4, 0);                
+                xQueueSend(xMaestroCmdQueue, &msg4, 0);      
+                TickType_t xStartTick = xTaskGetTickCount();
+                const TickType_t xTimeoutTicks = pdMS_TO_TICKS(7000);
                 while (is_armed) {
-                    if (lastUpdatedDepth <= 0.5f  && lastUpdatedPitch >= 25.0f) {
+                    if (lastUpdatedDepth <= 0.2f  && lastUpdatedPitch >= 25.0f) {
                         HAL_GPIO_WritePin(GPIOE ,GPIO_PIN_9 , SET);
+                        vTaskDelay(3000);
+                        HAL_GPIO_WritePin(GPIOE ,GPIO_PIN_9 , RESET);
                         break;
+                    }
+
+                    if ((xTaskGetTickCount() - xStartTick) >= xTimeoutTicks) {
+                        static CommandData_t new_cmd1 = {
+                            .command = TURN, 
+                            .value   = 180
+                        };
+                        static CommandData_t new_cmd2 = {
+                            .command = GO_TO,
+                            .value   = 30   
+                        };
+                        xQueueSend(xCmdQueue, &new_cmd1  , 0);
+                        xQueueSend(xCmdQueue , &new_cmd2 , 0);
+                        break; 
                     }
                     vTaskDelay(pdMS_TO_TICKS(50));
                 }
@@ -997,9 +1152,11 @@ static void vCommandHandler(void* parameters)
 
 static void vCommRxTask(void * parameters)
 {
-
   for(;;)
   {
+    #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+    ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+    #endif
     static CommandData_t cmd;
     HAL_UART_Receive_DMA(&huart6 , (uint8_t *)&cmd , sizeof(CommandData_t));
     ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
@@ -1023,16 +1180,10 @@ static void vCommRxTask(void * parameters)
     else if (cmd.command == DISARM) 
     {
         is_armed = false;
-        if (xEngineControlTask != NULL) {
-            vTaskSuspend(xEngineControlTask); 
-        }        
-        __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 1000);
-        
         portENTER_CRITICAL();
-        lastUpdatedPWM = 1000;
         g_EnginePID.setpoint = 0.0f;
-        g_PitchPID.setpoint  = 0.0f;
         portEXIT_CRITICAL();
+
         HAL_GPIO_WritePin(GPIOA, GPIO_PIN_2, SET);
         if (xCmdQueue != NULL) {
             xQueueReset(xCmdQueue);
@@ -1056,7 +1207,9 @@ static void vCommRxTask(void * parameters)
 static void vCommTxTask(void* parameters)
 {
   static TelemetryData_t toSendlist;
-
+  #if defined(HW_ILK_GOREV) || defined(HW_IKINCI_GOREV)
+  ulTaskNotifyTake(pdTRUE , portMAX_DELAY);
+  #endif
   for(;;)
   {
 

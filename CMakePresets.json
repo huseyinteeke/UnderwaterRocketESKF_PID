@@ -72,6 +72,26 @@
                 "HW_TARGET": "pertinaks",
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "ilk_gorev",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/ilk_gorev",
+            "toolchainFile": "${sourceDir}/hardware_targets/pcb/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "ILK_GOREV",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "ikinci_gorev",
+            "inherits": "base-preset",
+            "binaryDir": "${sourceDir}/build/ikinci_gorev",
+            "toolchainFile": "${sourceDir}/hardware_targets/pcb/cmake/gcc-arm-none-eabi.cmake",
+            "cacheVariables": {
+                "HW_TARGET": "IKINCI_GOREV",
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
     ],
     "buildPresets": [
@@ -98,6 +118,14 @@
         {
             "name": "pertinaks-release",
             "configurePreset": "pertinaks-release"
+        },
+        {
+            "name": "ilk-gorev-release",
+            "configurePreset": "ilk_gorev"
+        },
+        {
+            "name": "ikinci-gorev-release",
+            "configurePreset": "ikinci_gorev"
         }
     ]
 }

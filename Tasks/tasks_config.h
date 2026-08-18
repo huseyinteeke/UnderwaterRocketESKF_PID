@@ -32,7 +32,7 @@
 #define TASK_PRIORITY_VELOCITY        (tskIDLE_PRIORITY + 2)
 #define TASK_PRIORITY_ESKF            (tskIDLE_PRIORITY + 3)
 #define TASK_PRIORITY_MP              (tskIDLE_PRIORITY + 3)
-
+#define TASK_PRIORITY_DELAYER         (tskIDLE_PRIORITY)
 /*
  ############TASK STACK SIZES#################################3
  */

@@ -6,6 +6,9 @@
  */
 
 #include "ms5837.h"
+#include "stm32f4xx_hal_i2c.h"
+#include "stm32f4xx_hal_rcc.h"
+#include "stm32f4xx_hal_rcc_ex.h"
 
 // Private Helper
 static uint8_t MS5837_CheckCRC(MS5837_t *dev);
@@ -79,19 +82,20 @@ HAL_StatusTypeDef MS5837_Init(MS5837_t *dev, I2C_HandleTypeDef *i2c_bus){
         dev->i2cHandle = i2c_bus;
         HAL_StatusTypeDef status = HAL_I2C_IsDeviceReady(dev->i2cHandle, MS5837_ADDR, 5, 100);
 
+    
+        if (status != HAL_OK)
+        {
+            uint8_t cmd = MS5837_RESET_CMD;
+            HAL_I2C_Master_Transmit(dev->i2cHandle, MS5837_ADDR, &cmd, 1, 100);
+            dev->Delay(10);
+            status = HAL_I2C_IsDeviceReady(dev->i2cHandle, MS5837_ADDR, 5, 100);
             if (status != HAL_OK)
             {
-                uint8_t cmd = MS5837_RESET_CMD;
-                HAL_I2C_Master_Transmit(dev->i2cHandle, MS5837_ADDR, &cmd, 1, 100);
-                dev->Delay(10);
-                status = HAL_I2C_IsDeviceReady(dev->i2cHandle, MS5837_ADDR, 5, 100);
-                if (status != HAL_OK)
-                {
-                    HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
-                    return HAL_ERROR;
-                }
+                HAL_GPIO_WritePin(GPIOD, GPIO_PIN_15, GPIO_PIN_SET);
+                return HAL_ERROR;
             }
-
+        }
+    
 
         MS5837_Reset(dev);
 
